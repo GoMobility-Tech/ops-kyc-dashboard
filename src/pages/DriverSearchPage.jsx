@@ -43,9 +43,7 @@ export default function DriverSearchPage() {
       {/* Header */}
       <div className="border-b border-white/5 bg-[#1a1d27] px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-yellow-500 flex items-center justify-center shrink-0">
-            <UserCheck size={16} className="text-black" />
-          </div>
+          <img src="/logo.jpeg" alt="GO Mobility" className="w-8 h-8 rounded-lg object-cover shrink-0" />
           <div className="min-w-0">
             <p className="text-white font-semibold text-sm leading-tight">GO Mobility</p>
             <p className="text-slate-400 text-xs hidden sm:block">Ops KYC Dashboard</p>
