@@ -26,6 +26,22 @@ export const searchDrivers = (query) =>
 export const getDriverKycDetail = (userId) =>
   api.get(`/kyc/admin/drivers/${userId}`);
 
+// ─── My Workspace ─────────────────────────────────────────────────────────────
+export const getMyStats = () =>
+  api.get('/ops/me/stats');
+
+export const getMyDrivers = ({ status, search, page = 1, limit = 20 } = {}) =>
+  api.get('/ops/me/drivers', {
+    params: {
+      ...(status ? { status } : {}),
+      ...(search ? { search } : {}),
+      page, limit,
+    },
+  });
+
+export const getMyDriverDetail = (userId) =>
+  api.get(`/ops/me/drivers/${userId}`);
+
 // ─── Ops KYC Staged Flow ──────────────────────────────────────────────────────
 export const stageDocument = (userId, formData) =>
   api.post(`/ops/kyc/drivers/${userId}/documents`, formData, {
@@ -54,6 +70,6 @@ export const approveDocument = (docId, notes) =>
 export const rejectDocument = (docId, reason, allowRetry = true) =>
   api.post(`/kyc/admin/documents/${docId}/reject`, { reason, allowRetry });
 
-// ─── Bank Verify ──────────────────────────────────────────────────────────────
-export const verifyBankAccount = (userId, data) =>
-  api.post('/kyc/bank', { ...data, userId });
+// ─── Bank Verify (Ops inline penny-drop) ──────────────────────────────────────
+export const verifyDriverBank = (userId, { account_number, ifsc, name }) =>
+  api.post(`/ops/kyc/drivers/${userId}/bank`, { account_number, ifsc, name });

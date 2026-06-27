@@ -4,12 +4,15 @@ import {
   ArrowLeft, Upload, Trash2, Play, RotateCcw, CheckCircle2,
   XCircle, Clock, AlertTriangle, Flame, Loader2, Eye, ThumbsUp,
   ThumbsDown, RefreshCw, FileText, UserCheck, ChevronDown, ChevronUp,
+  Landmark, Sparkles,
 } from 'lucide-react';
 import {
-  getDriverKycDetail, getStagedDocuments, stageDocument,
+  getStagedDocuments, stageDocument,
   removeStagedDocument, triggerBatchVerification, getBatchStatus,
   retryDeadJob, approveDocument, rejectDocument,
+  getMyDriverDetail, verifyDriverBank,
 } from '../api/opsApi.js';
+import { compressImage } from '../utils/compressImage.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -140,9 +143,14 @@ function RejectModal({ docId, docType, onDone, onClose }) {
 
 function FileBtn({ side, file, onChange }) {
   const ref = useRef();
+  const openPicker = () => {
+    if (!ref.current) return;
+    ref.current.value = '';
+    ref.current.click();
+  };
   return (
     <>
-      <button type="button" onClick={() => ref.current.click()}
+      <button type="button" onClick={openPicker}
         className={`flex-1 flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg border text-xs transition active:scale-95
           ${file
             ? 'border-yellow-500/50 bg-yellow-500/10 text-yellow-400'
@@ -153,8 +161,41 @@ function FileBtn({ side, file, onChange }) {
         </span>
       </button>
       <input ref={ref} type="file" accept="image/*,.pdf" className="hidden"
-        onChange={e => onChange(e.target.files[0])} />
+        onChange={e => {
+          const f = e.target.files?.[0];
+          if (f) onChange(f);
+          e.target.value = '';
+        }} />
     </>
+  );
+}
+
+// ─── Document Thumbnail ──────────────────────────────────────────────────────
+
+function DocThumb({ url, label }) {
+  const isPdf = /\.pdf(\?|$)/i.test(url);
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer"
+      className="group relative block w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden border border-white/10 bg-[#0f1117] hover:border-yellow-500/50 transition">
+      {isPdf ? (
+        <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+          <FileText size={20} />
+          <span className="text-[10px] mt-1">PDF</span>
+        </div>
+      ) : (
+        <img src={url} alt={label} className="w-full h-full object-cover"
+          onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }} />
+      )}
+      <div style={{ display: 'none' }} className="absolute inset-0 flex-col items-center justify-center text-slate-400 text-[10px]">
+        <FileText size={20} /><span className="mt-1">No preview</span>
+      </div>
+      <div className="absolute inset-x-0 bottom-0 bg-black/60 text-white text-[10px] px-1.5 py-0.5 text-center opacity-0 group-hover:opacity-100 transition">
+        {label} · open
+      </div>
+      <div className="absolute top-1 right-1 bg-black/60 rounded p-0.5 opacity-0 group-hover:opacity-100 transition">
+        <Eye size={10} className="text-white" />
+      </div>
+    </a>
   );
 }
 
@@ -171,9 +212,12 @@ function DocUploadRow({ docType, existingDoc, stagedDoc, uploading, removing, on
   const isProc      = exStatus === 'processing';
   const showUpload  = !stagedDoc && !isTerminal && !isProc;
 
+  const frontUrl = stagedDoc?.file_url      || existingDoc?.file_url;
+  const backUrl  = stagedDoc?.back_file_url || existingDoc?.back_file_url;
+
   const doUpload = async () => {
-    await onUpload(docType, front, back);
-    setFront(null); setBack(null);
+    const ok = await onUpload(docType, front, back);
+    if (ok) { setFront(null); setBack(null); }
   };
 
   let iconEl, statusChip;
@@ -212,12 +256,6 @@ function DocUploadRow({ docType, existingDoc, stagedDoc, uploading, removing, on
           )}
         </div>
         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-          {(stagedDoc?.file_url || existingDoc?.file_url) && (
-            <a href={stagedDoc?.file_url || existingDoc?.file_url} target="_blank" rel="noopener noreferrer"
-              className="p-1.5 rounded-lg bg-slate-500/20 text-slate-400 hover:text-white active:bg-slate-500/30 transition">
-              <Eye size={13} />
-            </a>
-          )}
           {stagedDoc && (
             <button onClick={() => onRemove(stagedDoc.id)} disabled={isRemoving}
               className="p-1.5 rounded-lg bg-red-500/15 text-red-400 hover:text-red-300 active:bg-red-500/25 transition">
@@ -226,6 +264,14 @@ function DocUploadRow({ docType, existingDoc, stagedDoc, uploading, removing, on
           )}
         </div>
       </div>
+
+      {/* Uploaded image previews */}
+      {(frontUrl || backUrl) && (
+        <div className="ml-10 sm:ml-11 flex gap-2">
+          {frontUrl && <DocThumb url={frontUrl} label="Front" />}
+          {backUrl  && <DocThumb url={backUrl}  label="Back"  />}
+        </div>
+      )}
 
       {/* Upload area */}
       {showUpload && (
@@ -246,6 +292,15 @@ function DocUploadRow({ docType, existingDoc, stagedDoc, uploading, removing, on
 
       {isProc && <p className="ml-10 sm:ml-11 text-blue-400/70 text-[11px] leading-relaxed">In a running batch — wait before re-uploading.</p>}
       {isTerminal && <p className="ml-10 sm:ml-11 text-slate-600 text-[11px]">Already verified. Reject existing doc first to re-verify.</p>}
+
+      {/* Extracted data for already-verified existing docs */}
+      {existingDoc?.extracted_data && (isTerminal || exStatus === 'manual_review') && (
+        <div className="ml-10 sm:ml-11">
+          <ExtractedDataPanel docType={docType}
+            data={existingDoc.extracted_data}
+            score={existingDoc.confidence_score} />
+        </div>
+      )}
     </div>
   );
 }
@@ -258,6 +313,8 @@ function BatchJobRow({ docType, job, existingDoc, approving, onApprove, onReject
   const doc             = job?.doc || {};
   const docId           = existingDoc?.id || job?.documentId;
   const isApproving     = approving === docId;
+  const frontUrl        = doc.fileUrl      || existingDoc?.file_url;
+  const backUrl         = doc.backFileUrl  || existingDoc?.back_file_url;
 
   if (!job) {
     const exStatus = existingDoc?.status;
@@ -322,13 +379,14 @@ function BatchJobRow({ docType, job, existingDoc, approving, onApprove, onReject
             )}
           </div>
         </div>
-        {doc.fileUrl && (
-          <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer"
-            className="p-1.5 rounded-lg bg-slate-500/20 text-slate-400 hover:text-white transition shrink-0">
-            <Eye size={13} />
-          </a>
-        )}
       </div>
+
+      {(frontUrl || backUrl) && (
+        <div className="ml-10 sm:ml-11 flex gap-2">
+          {frontUrl && <DocThumb url={frontUrl} label="Front" />}
+          {backUrl  && <DocThumb url={backUrl}  label="Back"  />}
+        </div>
+      )}
 
       {actionType === 'failed' && job?.lastError && (
         <div className="ml-10 sm:ml-11 bg-orange-500/10 rounded-xl px-3 py-2 text-orange-400/80 text-[11px] font-mono leading-relaxed">
@@ -390,6 +448,127 @@ function BatchJobRow({ docType, job, existingDoc, approving, onApprove, onReject
   );
 }
 
+// ─── Bank Account Section ────────────────────────────────────────────────────
+
+function BankSection({ userId, bankDoc, onVerified }) {
+  const [acc,     setAcc]     = useState('');
+  const [ifsc,    setIfsc]    = useState('');
+  const [name,    setName]    = useState('');
+  const [loading, setLoading] = useState(false);
+  const [err,     setErr]     = useState('');
+  const [open,    setOpen]    = useState(false);
+
+  const status      = bankDoc?.status;
+  const isVerified  = status === 'auto_verified' || status === 'approved';
+  const isRejected  = status === 'rejected';
+  const data        = bankDoc?.extracted_data || {};
+
+  const submit = async (e) => {
+    e?.preventDefault();
+    setErr('');
+    if (acc.trim().length < 6)              return setErr('Account number is too short');
+    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc.trim().toUpperCase())) return setErr('IFSC must be 11 chars, e.g. SBIN0001234');
+    if (!name.trim())                       return setErr('Name is required');
+    setLoading(true);
+    try {
+      const res  = await verifyDriverBank(userId, {
+        account_number: acc.trim(),
+        ifsc:           ifsc.trim().toUpperCase(),
+        name:           name.trim(),
+      });
+      const d = res.data?.data;
+      if (d?.status === 'auto_verified') {
+        setAcc(''); setIfsc(''); setName('');
+        onVerified?.();
+      } else {
+        setErr(d?.message || 'Bank verification did not succeed');
+      }
+    } catch (e2) {
+      const r = e2.response?.data;
+      setErr(r?.data?.message || r?.message || 'Bank verification failed');
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="bg-[#1a1d27] rounded-2xl border border-white/5 overflow-hidden">
+      <button onClick={() => setOpen(o => !o)}
+        className="w-full px-3 sm:px-5 py-3 sm:py-4 flex items-center gap-3 hover:bg-white/[0.02] transition">
+        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+          {isVerified
+            ? <CheckCircle2 size={14} className="text-green-400" />
+            : isRejected
+              ? <XCircle size={14} className="text-red-400" />
+              : <Landmark size={14} className="text-slate-400" />}
+        </div>
+        <div className="flex-1 min-w-0 text-left">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-white text-xs sm:text-sm font-medium">Bank Account</p>
+            {isVerified  && <Chip label="Verified"  color="bg-green-500/20 text-green-400 border-green-500/30" />}
+            {isRejected  && <Chip label="Rejected"  color="bg-red-500/20 text-red-400 border-red-500/30" />}
+            {!bankDoc    && <Chip label="Not added" color="bg-slate-500/20 text-slate-400 border-slate-500/30" />}
+          </div>
+          {isVerified && (data.bank_name || data.account_masked) && (
+            <p className="text-slate-500 text-[11px] mt-0.5 truncate">
+              {data.bank_name} · {data.account_masked} {data.name_match_score ? `· match ${data.name_match_score}%` : ''}
+            </p>
+          )}
+        </div>
+        {open ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
+      </button>
+
+      {open && (
+        <div className="border-t border-white/5 px-3 sm:px-5 py-3 sm:py-4">
+          {isVerified ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 bg-[#0f1117] rounded-xl p-3">
+              {[
+                ['Bank',           data.bank_name],
+                ['Branch',         data.branch],
+                ['City',           data.city],
+                ['IFSC',           data.ifsc],
+                ['Account',        data.account_masked],
+                ['Holder',         data.holder_name],
+                ['Name match',     data.name_match_score != null ? `${data.name_match_score}% (${data.name_match_result || ''})` : null],
+                ['Account status', data.account_status],
+              ].filter(([, v]) => v != null && v !== '').map(([k, v]) => (
+                <div key={k}>
+                  <p className="text-slate-500 text-[10px] uppercase tracking-wider">{k}</p>
+                  <p className="text-slate-200 text-xs font-medium break-words leading-snug">{String(v)}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <form onSubmit={submit} className="space-y-2.5">
+              {isRejected && bankDoc?.rejection_reason && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 text-red-400 text-[11px] leading-relaxed">
+                  Previous attempt: {bankDoc.rejection_reason}
+                </div>
+              )}
+              <input value={acc} onChange={e => setAcc(e.target.value.replace(/\s/g, ''))}
+                placeholder="Account number" inputMode="numeric"
+                className="w-full bg-[#0f1117] rounded-xl px-3 py-2.5 text-sm text-white outline-none border border-white/10 focus:border-yellow-500/30" />
+              <input value={ifsc} onChange={e => setIfsc(e.target.value.toUpperCase())}
+                placeholder="IFSC (e.g. SBIN0001234)" maxLength={11}
+                className="w-full bg-[#0f1117] rounded-xl px-3 py-2.5 text-sm text-white outline-none border border-white/10 focus:border-yellow-500/30 uppercase" />
+              <input value={name} onChange={e => setName(e.target.value)}
+                placeholder="Account holder name"
+                className="w-full bg-[#0f1117] rounded-xl px-3 py-2.5 text-sm text-white outline-none border border-white/10 focus:border-yellow-500/30" />
+              {err && <p className="text-red-400 text-xs leading-relaxed">{err}</p>}
+              <button type="submit" disabled={loading}
+                className="w-full py-2.5 rounded-xl bg-yellow-500 text-black text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-yellow-400 transition disabled:opacity-60">
+                {loading ? <Sp size={12} /> : <Landmark size={12} />}
+                Verify Bank (penny-drop · ₹1)
+              </button>
+              <p className="text-slate-600 text-[10px] leading-relaxed text-center">
+                Cashfree will deposit ₹1 to validate. Max 3 attempts.
+              </p>
+            </form>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function DriverKycWorkspace() {
@@ -423,10 +602,27 @@ export default function DriverKycWorkspace() {
 
   const loadDriver = useCallback(async (skipStaged = false) => {
     try {
-      const reqs = [getDriverKycDetail(userId)];
+      const reqs = [getMyDriverDetail(userId)];
       if (!skipStaged) reqs.push(getStagedDocuments(userId));
       const [dRes, sRes] = await Promise.all(reqs);
-      setDriver(dRes.data?.data);
+      const raw = dRes.data?.data;
+      // Normalize camelCase → snake_case so existing UI code keeps working
+      const documents = (raw?.documents || []).map(d => ({
+        ...d,
+        document_type:     d.documentType,
+        file_url:          d.fileUrl,
+        back_file_url:     d.backFileUrl,
+        extracted_data:    d.extractedData,
+        rejection_reason:  d.rejectionReason,
+        confidence_score:  d.confidenceScore,
+      }));
+      setDriver({
+        ...raw,
+        full_name:     raw?.fullName,
+        phone_number:  raw?.phoneNumber,
+        documents,
+        kycStatus:     { overall_status: raw?.overallStatus },
+      });
       if (!skipStaged) setStaged(sRes?.data?.data?.documents || []);
     } catch { setError('Failed to load driver info'); }
     finally { setLoading(false); }
@@ -466,19 +662,34 @@ export default function DriverKycWorkspace() {
 
   const handleUpload = async (docType, frontFile, backFile) => {
     setUploading(docType); setError('');
-    const fd = new FormData();
-    fd.append('document_type', docType);
-    fd.append('file', frontFile);
-    if (backFile) fd.append('file_back', backFile);
     try {
+      const [front, back] = await Promise.all([
+        compressImage(frontFile),
+        backFile ? compressImage(backFile) : Promise.resolve(null),
+      ]);
+      // eslint-disable-next-line no-console
+      console.log('[upload]', docType,
+        'front:', frontFile?.size, '→', front?.size,
+        back ? `· back: ${backFile?.size} → ${back.size}` : '');
+      const fd = new FormData();
+      fd.append('document_type', docType);
+      fd.append('file', front);
+      if (back) fd.append('file_back', back);
       await stageDocument(userId, fd);
       const sRes = await getStagedDocuments(userId);
       setStaged(sRes.data?.data?.documents || []);
+      return true;
     } catch (err) {
-      const msg = err.response?.data?.message || 'Upload failed';
-      setError(err.response?.status === 409
-        ? `${msg} — Reject the existing document first to re-verify.`
-        : msg);
+      const status = err.response?.status;
+      const msg    = err.response?.data?.message || 'Upload failed';
+      if (status === 413) {
+        setError('File too large for upload. Try a smaller image (or screenshot of the doc).');
+      } else if (status === 409) {
+        setError(`${msg} — Reject the existing document first to re-verify.`);
+      } else {
+        setError(msg);
+      }
+      return false;
     } finally { setUploading(null); }
   };
 
@@ -563,6 +774,28 @@ export default function DriverKycWorkspace() {
       <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-5 space-y-3 sm:space-y-4">
         {error && <ErrBanner msg={error} onClose={() => setError('')} />}
 
+        {/* Next action banner */}
+        {driver?.nextAction && phase === 'upload' && (
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-3 py-2.5 flex items-start gap-2 text-yellow-300 text-xs leading-relaxed">
+            <Sparkles size={13} className="shrink-0 mt-0.5" />
+            <span>{driver.nextAction}</span>
+          </div>
+        )}
+
+        {/* Progress strip */}
+        {phase === 'upload' && driver?.completionPct != null && (
+          <div className="bg-[#1a1d27] rounded-xl border border-white/5 px-3 sm:px-4 py-2.5">
+            <div className="flex justify-between items-center text-[11px] text-slate-400 mb-1.5">
+              <span>KYC progress</span>
+              <span>{driver.verifiedDocsCount ?? 0}/{driver.submittedDocsCount ?? 0} verified · {driver.completionPct}%</span>
+            </div>
+            <div className="h-1.5 bg-[#0f1117] rounded-full overflow-hidden">
+              <div className="h-full bg-yellow-500 rounded-full transition-all"
+                style={{ width: `${driver.completionPct}%` }} />
+            </div>
+          </div>
+        )}
+
         {/* ══════════════════════════════════════
             SCREEN 2 — Document Upload
         ══════════════════════════════════════ */}
@@ -600,6 +833,12 @@ export default function DriverKycWorkspace() {
               ))}
             </div>
           </div>
+        )}
+
+        {/* Bank account (inline penny-drop, separate from doc batch) */}
+        {phase === 'upload' && (
+          <BankSection userId={userId} bankDoc={docMap.BANK_ACCOUNT}
+            onVerified={() => loadDriver(true)} />
         )}
 
         {/* ══════════════════════════════════════
