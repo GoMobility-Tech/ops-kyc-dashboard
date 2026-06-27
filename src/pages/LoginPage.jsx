@@ -13,7 +13,7 @@ export default function LoginPage() {
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
-    if (phone.length !== 10) return setError('Valid 10-digit phone required');
+    if (!/^[6-9]\d{9}$/.test(phone)) return setError('Enter valid 10-digit Indian mobile number (starts with 6-9)');
     setLoad(true); setError('');
     try {
       await sendOtp(phone);

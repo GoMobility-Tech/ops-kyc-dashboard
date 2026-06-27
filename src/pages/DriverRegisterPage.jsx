@@ -30,7 +30,7 @@ export default function DriverRegisterPage() {
     e.preventDefault();
     if (!fullName.trim())           return setError('Full name is required');
     if (fullName.trim().length < 2) return setError('Name must be at least 2 characters');
-    if (phone.length !== 10)        return setError('Enter valid 10-digit phone number');
+    if (!/^[6-9]\d{9}$/.test(phone)) return setError('Enter valid 10-digit Indian mobile number (starts with 6-9)');
 
     setLoading(true); setError('');
     try {

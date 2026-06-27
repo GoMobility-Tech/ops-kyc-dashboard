@@ -13,7 +13,7 @@ import {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const DOC_TYPES = ['AADHAAR', 'SELFIE', 'PAN', 'DRIVING_LICENCE', 'VEHICLE_RC'];
+const DOC_TYPES = ['AADHAAR', 'PAN', 'DRIVING_LICENCE', 'VEHICLE_RC', 'SELFIE'];
 const DOC_LABELS = {
   AADHAAR: 'Aadhaar Card', PAN: 'PAN Card',
   DRIVING_LICENCE: 'Driving Licence', VEHICLE_RC: 'Vehicle RC', SELFIE: 'Selfie / Photo',
@@ -447,7 +447,7 @@ export default function DriverKycWorkspace() {
         const data = res.data?.data;
         setBatch(data);
         if (['completed', 'partial', 'failed'].includes(data?.status)) { stopPoll(); loadDriver(true); }
-      } catch { stopPoll(); }
+      } catch { stopPoll(); setError('Lost connection to server — click Refresh to resume.'); }
     }, 2000);
   }, [userId, loadDriver]);
 
