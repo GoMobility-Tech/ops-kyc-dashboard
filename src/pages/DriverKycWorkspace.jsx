@@ -4,7 +4,7 @@ import {
   ArrowLeft, Upload, Trash2, Play, RotateCcw, CheckCircle2,
   XCircle, Clock, AlertTriangle, Flame, Loader2, Eye, ThumbsUp,
   ThumbsDown, RefreshCw, FileText, UserCheck, ChevronDown, ChevronUp,
-  Landmark, Sparkles,
+  Landmark, Sparkles, Ban,
 } from 'lucide-react';
 import {
   getStagedDocuments, stageDocument,
@@ -13,6 +13,8 @@ import {
   getMyDriverDetail, verifyDriverBank,
 } from '../api/opsApi.js';
 import { compressImage } from '../utils/compressImage.js';
+import { isAdmin } from '../utils/auth.js';
+import SuspendModal from './SuspendModal.jsx';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -583,6 +585,7 @@ export default function DriverKycWorkspace() {
   const [triggering,   setTriggering]  = useState(false);
   const [approving,    setApproving]   = useState(null);
   const [rejectModal,  setRejectModal] = useState(null);
+  const [suspendOpen,  setSuspendOpen] = useState(false);
   const [error,        setError]       = useState('');
   const [loading,      setLoading]     = useState(true);
   const [pollTimedOut, setPTO]         = useState(false);
@@ -769,6 +772,13 @@ export default function DriverKycWorkspace() {
           <p className="text-slate-400 text-[11px] sm:text-xs">{driver?.phone_number}</p>
         </div>
         <Chip label={kyc.overall_status?.replace(/_/g, ' ') || 'not started'} color={chipColor} />
+        {isAdmin() && kyc.overall_status !== 'suspended' && (
+          <button onClick={() => setSuspendOpen(true)}
+            title="Suspend driver (admin only)"
+            className="ml-1 p-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition shrink-0">
+            <Ban size={13} />
+          </button>
+        )}
       </div>
 
       <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-5 space-y-3 sm:space-y-4">
@@ -938,6 +948,12 @@ export default function DriverKycWorkspace() {
           }}
           onClose={() => setRejectModal(null)}
         />
+      )}
+
+      {suspendOpen && (
+        <SuspendModal userId={userId} driverName={driver?.full_name}
+          onDone={() => { setSuspendOpen(false); loadDriver(); }}
+          onClose={() => setSuspendOpen(false)} />
       )}
     </div>
   );

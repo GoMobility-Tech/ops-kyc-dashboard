@@ -70,6 +70,27 @@ export const approveDocument = (docId, notes) =>
 export const rejectDocument = (docId, reason, allowRetry = true) =>
   api.post(`/kyc/admin/documents/${docId}/reject`, { reason, allowRetry });
 
+// ─── KYC Admin — Review Queue / Doc Detail / Fraud / Suspend ─────────────────
+export const getReviewQueue = ({ type, status = 'manual_review', page = 1, limit = 20 } = {}) =>
+  api.get('/kyc/admin/queue', {
+    params: {
+      ...(type ? { type } : {}),
+      ...(status ? { status } : {}),
+      page, limit,
+    },
+  });
+
+export const getDocumentDetail = (docId) =>
+  api.get(`/kyc/admin/documents/${docId}`);
+
+export const getFraudAlerts = ({ severity } = {}) =>
+  api.get('/kyc/admin/fraud-alerts', {
+    params: { ...(severity ? { severity } : {}) },
+  });
+
+export const suspendDriver = (userId, reason) =>
+  api.post(`/kyc/admin/drivers/${userId}/suspend`, { reason });
+
 // ─── Bank Verify (Ops inline penny-drop) ──────────────────────────────────────
 export const verifyDriverBank = (userId, { account_number, ifsc, name }) =>
   api.post(`/ops/kyc/drivers/${userId}/bank`, { account_number, ifsc, name });

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { searchDrivers } from '../api/opsApi.js';
+import { clearSession } from '../utils/auth.js';
 import { Search, UserCheck, LogOut, Loader2, ChevronRight, UserPlus } from 'lucide-react';
 
 const STATUS_COLORS = {
@@ -34,7 +35,7 @@ export default function DriverSearchPage() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('ops_token');
+    clearSession();
     nav('/login');
   };
 

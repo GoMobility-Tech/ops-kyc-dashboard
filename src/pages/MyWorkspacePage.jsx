@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import {
   Search, LogOut, Loader2, ChevronRight, UserPlus, Users,
   CheckCircle2, AlertTriangle, Clock, XCircle, Ban, CircleDashed,
-  RefreshCw, ChevronDown, Sparkles,
+  RefreshCw, ChevronDown, Sparkles, ListChecks, ShieldAlert,
 } from 'lucide-react';
 import { getMyStats, getMyDrivers } from '../api/opsApi.js';
+import { clearSession } from '../utils/auth.js';
 
 const STATUS_META = {
   verified:       { label: 'Verified',       color: 'bg-green-500/20 text-green-400 border-green-500/30',   icon: CheckCircle2 },
@@ -155,7 +156,7 @@ export default function MyWorkspacePage() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('ops_token');
+    clearSession();
     nav('/login');
   };
 
@@ -170,7 +171,19 @@ export default function MyWorkspacePage() {
             <p className="text-slate-400 text-xs hidden sm:block">Ops KYC Dashboard</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <button onClick={() => nav('/queue')}
+            title="Review Queue"
+            className="p-2 rounded-lg text-slate-400 hover:text-yellow-400 hover:bg-white/5 transition flex items-center gap-1.5">
+            <ListChecks size={15} />
+            <span className="hidden md:inline text-xs">Queue</span>
+          </button>
+          <button onClick={() => nav('/fraud-alerts')}
+            title="Fraud Alerts"
+            className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-white/5 transition flex items-center gap-1.5">
+            <ShieldAlert size={15} />
+            <span className="hidden md:inline text-xs">Fraud</span>
+          </button>
           <button onClick={handleRefresh} disabled={refreshing}
             className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition disabled:opacity-50"
             title="Refresh">

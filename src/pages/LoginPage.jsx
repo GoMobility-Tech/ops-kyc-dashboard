@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sendOtp, verifyOtp } from '../api/opsApi.js';
+import { setSession } from '../utils/auth.js';
 import { Shield, Phone, KeyRound, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -29,9 +30,14 @@ export default function LoginPage() {
     setLoad(true); setError('');
     try {
       const res = await verifyOtp(phone, otp);
-      const token = res.data?.data?.accessToken || res.data?.data?.token;
+      const d = res.data?.data || {};
+      const token = d.accessToken || d.token;
       if (!token) throw new Error('No token in response');
-      localStorage.setItem('ops_token', token);
+      setSession({
+        token,
+        role: d.role || d.user?.role || 'ops_team',
+        name: d.fullName || d.name || d.user?.fullName || '',
+      });
       nav('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid OTP');
