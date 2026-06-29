@@ -549,6 +549,7 @@ function BankSection({ userId, bankDoc, onVerified }) {
   const [name,    setName]    = useState('');
   const [loading, setLoading] = useState(false);
   const [err,     setErr]     = useState('');
+  const [info,    setInfo]    = useState('');
   const [open,    setOpen]    = useState(false);
 
   const status      = bankDoc?.status;
@@ -558,7 +559,7 @@ function BankSection({ userId, bankDoc, onVerified }) {
 
   const submit = async (e) => {
     e?.preventDefault();
-    setErr('');
+    setErr(''); setInfo('');
     if (acc.trim().length < 6)              return setErr('Account number is too short');
     if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc.trim().toUpperCase())) return setErr('IFSC must be 11 chars, e.g. SBIN0001234');
     if (!name.trim())                       return setErr('Name is required');
@@ -573,8 +574,18 @@ function BankSection({ userId, bankDoc, onVerified }) {
       if (d?.status === 'auto_verified') {
         setAcc(''); setIfsc(''); setName('');
         onVerified?.();
+      } else if (d?.status === 'manual_review') {
+        // 3rd failed attempt — backend escalates to ops review queue (still success:true).
+        setAcc(''); setIfsc(''); setName('');
+        setInfo(d?.message || 'Sent for manual review — team will contact the driver within 24 hours.');
+        onVerified?.();
       } else {
-        setErr(d?.message || 'Bank verification did not succeed');
+        // Soft failure on attempts 1–2.
+        const left = d?.attemptsLeft;
+        setErr(
+          (d?.message || 'Bank verification did not succeed') +
+          (left != null ? ` · ${left} attempt${left === 1 ? '' : 's'} left` : '')
+        );
       }
     } catch (e2) {
       const r = e2.response?.data;
@@ -646,6 +657,11 @@ function BankSection({ userId, bankDoc, onVerified }) {
                 placeholder="Account holder name"
                 className="w-full bg-[#0f1117] rounded-xl px-3 py-2.5 text-sm text-white outline-none border border-white/10 focus:border-yellow-500/30" />
               {err && <p className="text-red-400 text-xs leading-relaxed">{err}</p>}
+              {info && (
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg px-3 py-2 text-blue-300 text-[11px] leading-relaxed">
+                  {info}
+                </div>
+              )}
               <button type="submit" disabled={loading}
                 className="w-full py-2.5 rounded-xl bg-yellow-500 text-black text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-yellow-400 transition disabled:opacity-60">
                 {loading ? <Sp size={12} /> : <Landmark size={12} />}
