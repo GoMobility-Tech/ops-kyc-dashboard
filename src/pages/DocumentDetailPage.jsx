@@ -3,14 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Loader2, ThumbsUp, ThumbsDown, AlertTriangle, Download,
   Phone, ExternalLink, ChevronDown, ChevronUp, ShieldAlert, FileText,
-  CheckCircle2, XCircle, Ban,
+  CheckCircle2, XCircle,
 } from 'lucide-react';
 import {
   getDocumentDetail, getFraudAlerts,
   approveDocument, rejectDocument,
 } from '../api/opsApi.js';
-import { isAdmin } from '../utils/auth.js';
-import SuspendModal from './SuspendModal.jsx';
 
 const DOC_LABELS = {
   AADHAAR:         'Aadhaar Card',
@@ -293,9 +291,6 @@ export default function DocumentDetailPage() {
   const [actionErr, setAErr]  = useState('');
   const [approving, setApp]   = useState(false);
   const [showReject, setShowReject] = useState(false);
-  const [showSuspend, setShowSuspend] = useState(false);
-
-  const admin = isAdmin();
 
   const load = useCallback(async () => {
     setLoading(true); setError('');
@@ -419,12 +414,6 @@ export default function DocumentDetailPage() {
               {doc.driver_overall_status && (
                 <Chip label={doc.driver_overall_status.replace(/_/g, ' ')} />
               )}
-              {admin && (
-                <button onClick={() => setShowSuspend(true)}
-                  className="ml-auto px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-[11px] font-semibold hover:bg-red-500/20 transition flex items-center gap-1">
-                  <Ban size={11} /> Suspend
-                </button>
-              )}
             </div>
           </div>
 
@@ -538,12 +527,6 @@ export default function DocumentDetailPage() {
         <RejectDialog docId={doc.id}
           onDone={() => { setShowReject(false); load(); }}
           onClose={() => setShowReject(false)} />
-      )}
-
-      {showSuspend && (
-        <SuspendModal userId={doc.user_id} driverName={doc.full_name}
-          onDone={() => { setShowSuspend(false); load(); }}
-          onClose={() => setShowSuspend(false)} />
       )}
     </div>
   );

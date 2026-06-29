@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Search, LogOut, Loader2, ChevronRight, UserPlus, Users,
   CheckCircle2, AlertTriangle, Clock, XCircle, Ban, CircleDashed,
-  RefreshCw, ChevronDown, Sparkles, ListChecks, ShieldAlert,
+  RefreshCw, ChevronDown, Sparkles, ListChecks,
 } from 'lucide-react';
 import { getMyStats, getMyDrivers } from '../api/opsApi.js';
 import { clearSession } from '../utils/auth.js';
@@ -177,12 +177,6 @@ export default function MyWorkspacePage() {
             className="p-2 rounded-lg text-slate-400 hover:text-yellow-400 hover:bg-white/5 transition flex items-center gap-1.5">
             <ListChecks size={15} />
             <span className="hidden md:inline text-xs">Queue</span>
-          </button>
-          <button onClick={() => nav('/fraud-alerts')}
-            title="Fraud Alerts"
-            className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-white/5 transition flex items-center gap-1.5">
-            <ShieldAlert size={15} />
-            <span className="hidden md:inline text-xs">Fraud</span>
           </button>
           <button onClick={handleRefresh} disabled={refreshing}
             className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition disabled:opacity-50"

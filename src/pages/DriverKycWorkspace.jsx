@@ -4,7 +4,7 @@ import {
   ArrowLeft, Upload, Trash2, Play, RotateCcw, CheckCircle2,
   XCircle, Clock, AlertTriangle, Flame, Loader2, Eye, ThumbsUp,
   ThumbsDown, RefreshCw, FileText, UserCheck, ChevronDown, ChevronUp,
-  Landmark, Sparkles, Ban,
+  Landmark, Sparkles, Phone, Hash,
 } from 'lucide-react';
 import {
   getStagedDocuments, stageDocument,
@@ -13,8 +13,7 @@ import {
   getMyDriverDetail, verifyDriverBank,
 } from '../api/opsApi.js';
 import { compressImage } from '../utils/compressImage.js';
-import { isAdmin } from '../utils/auth.js';
-import SuspendModal from './SuspendModal.jsx';
+import { validateDocNumber, docNumberPlaceholder, docNumberHelp } from '../utils/validateDocNumber.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -23,7 +22,7 @@ const DOC_LABELS = {
   AADHAAR: 'Aadhaar Card', PAN: 'PAN Card',
   DRIVING_LICENCE: 'Driving Licence', VEHICLE_RC: 'Vehicle RC', SELFIE: 'Selfie / Photo',
 };
-const HAS_BACK = new Set(['AADHAAR']);
+const HAS_BACK = new Set(['AADHAAR', 'DRIVING_LICENCE']);
 
 const EXT = {
   AADHAAR:         { name: 'Name', dob: 'Date of Birth', gender: 'Gender', masked: 'Aadhaar (masked)', state: 'State', pin_code: 'PIN Code', district: 'District' },
@@ -204,8 +203,9 @@ function DocThumb({ url, label }) {
 // ─── Upload Phase — Doc Row ───────────────────────────────────────────────────
 
 function DocUploadRow({ docType, existingDoc, stagedDoc, uploading, removing, onUpload, onRemove }) {
-  const [front, setFront] = useState(null);
-  const [back,  setBack]  = useState(null);
+  const [front, setFront]   = useState(null);
+  const [back,  setBack]    = useState(null);
+  const [number, setNumber] = useState('');
 
   const isUploading = uploading === docType;
   const isRemoving  = removing === stagedDoc?.id;
@@ -213,13 +213,18 @@ function DocUploadRow({ docType, existingDoc, stagedDoc, uploading, removing, on
   const isTerminal  = exStatus === 'auto_verified' || exStatus === 'approved';
   const isProc      = exStatus === 'processing';
   const showUpload  = !stagedDoc && !isTerminal && !isProc;
+  const wantsNumber = docType !== 'SELFIE';
 
   const frontUrl = stagedDoc?.file_url      || existingDoc?.file_url;
   const backUrl  = stagedDoc?.back_file_url || existingDoc?.back_file_url;
 
+  const v = wantsNumber ? validateDocNumber(docType, number) : { valid: true, normalized: '' };
+  const numberInvalid = wantsNumber && number && !v.valid;
+
   const doUpload = async () => {
-    const ok = await onUpload(docType, front, back);
-    if (ok) { setFront(null); setBack(null); }
+    if (numberInvalid) return;
+    const ok = await onUpload(docType, front, back, v.normalized || '');
+    if (ok) { setFront(null); setBack(null); setNumber(''); }
   };
 
   let iconEl, statusChip;
@@ -275,15 +280,39 @@ function DocUploadRow({ docType, existingDoc, stagedDoc, uploading, removing, on
         </div>
       )}
 
+      {/* Provided number (when staged) */}
+      {stagedDoc?.provided_number && (
+        <div className="ml-10 sm:ml-11 inline-flex items-center gap-1.5 text-[11px] text-slate-400 bg-[#0f1117] rounded-lg px-2 py-1 border border-white/5">
+          <Hash size={10} /> <span className="font-mono">{stagedDoc.provided_number}</span>
+        </div>
+      )}
+
       {/* Upload area */}
       {showUpload && (
         <div className="ml-10 sm:ml-11 space-y-2">
+          {wantsNumber && (
+            <div>
+              <input
+                value={number}
+                onChange={e => setNumber(e.target.value.toUpperCase())}
+                placeholder={docNumberPlaceholder(docType)}
+                inputMode={docType === 'AADHAAR' ? 'numeric' : 'text'}
+                className={`w-full bg-[#0f1117] rounded-xl px-3 py-2 text-sm text-white outline-none border font-mono tracking-wide
+                  ${numberInvalid
+                    ? 'border-red-500/40 focus:border-red-500/60'
+                    : 'border-white/10 focus:border-yellow-500/30'}`}
+              />
+              <p className={`text-[10px] mt-1 leading-relaxed ${numberInvalid ? 'text-red-400' : 'text-slate-600'}`}>
+                {numberInvalid ? v.error : `${docNumberHelp(docType)} · optional but recommended`}
+              </p>
+            </div>
+          )}
           <div className="flex gap-1.5 sm:gap-2">
             <FileBtn side="Front" file={front} onChange={setFront} />
             {HAS_BACK.has(docType) && <FileBtn side="Back (rec.)" file={back} onChange={setBack} />}
           </div>
           {front && (
-            <button onClick={doUpload} disabled={isUploading}
+            <button onClick={doUpload} disabled={isUploading || numberInvalid}
               className="w-full py-2 rounded-xl bg-yellow-500 text-black text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-yellow-400 active:bg-yellow-600 transition disabled:opacity-60">
               {isUploading ? <Sp size={12} /> : <Upload size={12} />}
               {exStatus === 'rejected' || exStatus === 'manual_review' ? 'Re-upload' : 'Upload'} {DOC_LABELS[docType]}
@@ -338,6 +367,14 @@ function BatchJobRow({ docType, job, existingDoc, approving, onApprove, onReject
 
   let iconEl, chip, actionType = null;
 
+  // Soft mismatch detection (worker sets last_error to NUMBER_MISMATCH on
+  // attempts 1–2 with result_doc_status: 'pending'). Final mismatch on attempt 3
+  // sets manual_review + NUMBER_MISMATCH_MAX_ATTEMPTS.
+  const lastErr      = job?.lastError || '';
+  const docReject    = doc.rejectionReason || existingDoc?.rejection_reason || '';
+  const isSoftMis    = /NUMBER_MISMATCH$/.test(lastErr) || /NUMBER_MISMATCH$/.test(docReject);
+  const isHardMis    = /NUMBER_MISMATCH_MAX_ATTEMPTS/.test(lastErr) || /NUMBER_MISMATCH_MAX_ATTEMPTS/.test(docReject);
+
   if (jobStatus === 'queued') {
     iconEl = <Clock size={14} className="text-slate-400" />;
     chip   = <Chip label="Queued" />;
@@ -353,9 +390,15 @@ function BatchJobRow({ docType, job, existingDoc, approving, onApprove, onReject
       iconEl = <CheckCircle2 size={14} className="text-green-400" />;
       chip   = <Chip label={resultDocStatus === 'approved' ? 'Approved' : 'Verified'} color="bg-green-500/20 text-green-400 border-green-500/30" />;
       actionType = 'verified';
+    } else if (resultDocStatus === 'pending') {
+      // Soft retry — driver-typed number didn't match OCR but still has attempts.
+      iconEl = <RefreshCw size={14} className="text-blue-400" />;
+      chip   = <Chip label="Soft retry — re-stage" color="bg-blue-500/20 text-blue-400 border-blue-500/30" />;
+      actionType = 'soft_retry';
     } else if (resultDocStatus === 'manual_review') {
       iconEl = <AlertTriangle size={14} className="text-yellow-400" />;
-      chip   = <Chip label="Needs review" color="bg-yellow-500/20 text-yellow-400 border-yellow-500/30" />;
+      chip   = <Chip label={isHardMis ? 'Mismatch — review' : 'Needs review'}
+        color="bg-yellow-500/20 text-yellow-400 border-yellow-500/30" />;
       actionType = 'review';
     } else if (resultDocStatus === 'rejected') {
       iconEl = <XCircle size={14} className="text-red-400" />;
@@ -403,9 +446,26 @@ function BatchJobRow({ docType, job, existingDoc, approving, onApprove, onReject
       )}
 
       {actionType === 'review' && (
-        <div className="ml-10 sm:ml-11 bg-yellow-500/10 rounded-xl px-3 py-2 text-yellow-400/80 text-xs leading-relaxed">
-          Confidence below threshold — manual decision required.
-          {doc.confidenceScore != null && ` (${doc.confidenceScore}%)`}
+        <div className="ml-10 sm:ml-11 bg-yellow-500/10 rounded-xl px-3 py-2 text-yellow-400/80 text-xs leading-relaxed space-y-1">
+          {isHardMis ? (
+            <>
+              <p className="font-semibold text-yellow-300">Number mismatch — 3 attempts used</p>
+              <p>Driver-typed number doesn't match OCR. Doc gone to manual review queue.</p>
+            </>
+          ) : (
+            <p>Confidence below threshold — manual decision required.
+              {doc.confidenceScore != null && ` (${doc.confidenceScore}%)`}</p>
+          )}
+        </div>
+      )}
+
+      {actionType === 'soft_retry' && (
+        <div className="ml-10 sm:ml-11 bg-blue-500/10 rounded-xl px-3 py-2 text-blue-300/90 text-xs leading-relaxed space-y-1.5">
+          <p className="font-semibold">Number mismatch — soft retry available</p>
+          <p className="text-blue-300/70">
+            Typed number OCR se match nahi hua. Doc remove karke correct number ke saath re-stage karo,
+            ya clearer image bhejo.
+          </p>
         </div>
       )}
 
@@ -443,6 +503,15 @@ function BatchJobRow({ docType, job, existingDoc, approving, onApprove, onReject
           <button onClick={onReupload}
             className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-slate-500/15 border border-slate-500/30 text-slate-300 text-xs font-semibold flex items-center justify-center sm:inline-flex gap-1.5 hover:bg-slate-500/25 transition">
             <Upload size={12} /> Re-upload → New Batch
+          </button>
+        </div>
+      )}
+
+      {actionType === 'soft_retry' && (
+        <div className="ml-10 sm:ml-11 pt-1">
+          <button onClick={onReupload}
+            className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-300 text-xs font-semibold flex items-center justify-center sm:inline-flex gap-1.5 hover:bg-blue-500/25 transition">
+            <RefreshCw size={12} /> Re-stage with correct number
           </button>
         </div>
       )}
@@ -585,7 +654,6 @@ export default function DriverKycWorkspace() {
   const [triggering,   setTriggering]  = useState(false);
   const [approving,    setApproving]   = useState(null);
   const [rejectModal,  setRejectModal] = useState(null);
-  const [suspendOpen,  setSuspendOpen] = useState(false);
   const [error,        setError]       = useState('');
   const [loading,      setLoading]     = useState(true);
   const [pollTimedOut, setPTO]         = useState(false);
@@ -663,7 +731,7 @@ export default function DriverKycWorkspace() {
     return stopPoll;
   }, []); // eslint-disable-line
 
-  const handleUpload = async (docType, frontFile, backFile) => {
+  const handleUpload = async (docType, frontFile, backFile, docNumber = '') => {
     setUploading(docType); setError('');
     try {
       const [front, back] = await Promise.all([
@@ -673,9 +741,11 @@ export default function DriverKycWorkspace() {
       // eslint-disable-next-line no-console
       console.log('[upload]', docType,
         'front:', frontFile?.size, '→', front?.size,
-        back ? `· back: ${backFile?.size} → ${back.size}` : '');
+        back ? `· back: ${backFile?.size} → ${back.size}` : '',
+        docNumber ? `· number: ${docNumber}` : '');
       const fd = new FormData();
       fd.append('document_type', docType);
+      if (docNumber) fd.append('document_number', docNumber);
       fd.append('file', front);
       if (back) fd.append('file_back', back);
       await stageDocument(userId, fd);
@@ -772,12 +842,12 @@ export default function DriverKycWorkspace() {
           <p className="text-slate-400 text-[11px] sm:text-xs">{driver?.phone_number}</p>
         </div>
         <Chip label={kyc.overall_status?.replace(/_/g, ' ') || 'not started'} color={chipColor} />
-        {isAdmin() && kyc.overall_status !== 'suspended' && (
-          <button onClick={() => setSuspendOpen(true)}
-            title="Suspend driver (admin only)"
-            className="ml-1 p-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition shrink-0">
-            <Ban size={13} />
-          </button>
+        {driver?.phone_number && (
+          <a href={`tel:${driver.phone_number}`}
+            title="Call driver"
+            className="ml-1 p-1.5 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20 transition shrink-0">
+            <Phone size={13} />
+          </a>
         )}
       </div>
 
@@ -948,12 +1018,6 @@ export default function DriverKycWorkspace() {
           }}
           onClose={() => setRejectModal(null)}
         />
-      )}
-
-      {suspendOpen && (
-        <SuspendModal userId={userId} driverName={driver?.full_name}
-          onDone={() => { setSuspendOpen(false); loadDriver(); }}
-          onClose={() => setSuspendOpen(false)} />
       )}
     </div>
   );
