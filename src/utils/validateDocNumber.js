@@ -37,7 +37,7 @@ export const docNumberPlaceholder = (docType) => ({
 }[docType] || '');
 
 export const docNumberHelp = (docType) => ({
-  AADHAAR:         '12 digits — OCR cross-check; mismatch hua to soft retry milega',
+  AADHAAR:         '12 digits — cross-checked against OCR; mismatch triggers a soft retry',
   PAN:             '5 letters + 4 digits + 1 letter',
   DRIVING_LICENCE: '8–16 alphanumeric chars (no spaces/dashes)',
   VEHICLE_RC:      'State code + digits + series, e.g. UP14AB1234',

@@ -453,19 +453,41 @@ function BatchJobRow({ docType, job, existingDoc, approving, onApprove, onReject
               <p>Driver-typed number doesn't match OCR. Doc gone to manual review queue.</p>
             </>
           ) : (
-            <p>Confidence below threshold — manual decision required.
-              {doc.confidenceScore != null && ` (${doc.confidenceScore}%)`}</p>
+            <>
+              <p>Manual decision required by ops review team.
+                {doc.confidenceScore != null && ` Confidence ${doc.confidenceScore}%.`}</p>
+              {(docReject || lastErr) && (
+                <p className="text-yellow-400/60 text-[11px] font-mono break-words">
+                  {docReject || lastErr}
+                </p>
+              )}
+            </>
           )}
         </div>
       )}
 
       {actionType === 'soft_retry' && (
         <div className="ml-10 sm:ml-11 bg-blue-500/10 rounded-xl px-3 py-2 text-blue-300/90 text-xs leading-relaxed space-y-1.5">
-          <p className="font-semibold">Number mismatch — soft retry available</p>
-          <p className="text-blue-300/70">
-            Typed number OCR se match nahi hua. Doc remove karke correct number ke saath re-stage karo,
-            ya clearer image bhejo.
-          </p>
+          {isSoftMis ? (
+            <>
+              <p className="font-semibold">Number mismatch — soft retry available</p>
+              <p className="text-blue-300/70">
+                The typed number does not match OCR. Remove this doc and re-stage with the correct number,
+                or upload a clearer image.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-semibold">OCR / govt check failed — re-stage</p>
+              <p className="text-blue-300/70">
+                Cashfree could not parse or verify this document. Upload a clearer image, or confirm the
+                correct document was submitted. Soft retry is available.
+              </p>
+              {lastErr && (
+                <p className="text-blue-300/50 text-[11px] font-mono break-words">{lastErr}</p>
+              )}
+            </>
+          )}
         </div>
       )}
 
