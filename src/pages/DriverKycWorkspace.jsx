@@ -10,7 +10,7 @@ import {
   getStagedDocuments, stageDocument,
   removeStagedDocument, triggerBatchVerification, getBatchStatus,
   retryDeadJob, approveDocument, rejectDocument,
-  getMyDriverDetail, verifyDriverBank,
+  getMyDriverDetail, verifyDriverBank, getVehicleMaster,
 } from '../api/opsApi.js';
 import { compressImage } from '../utils/compressImage.js';
 import { validateDocNumber, docNumberPlaceholder, docNumberHelp } from '../utils/validateDocNumber.js';
@@ -200,12 +200,85 @@ function DocThumb({ url, label }) {
   );
 }
 
+// ─── Vehicle Category Picker (RC only) ────────────────────────────────────────
+// Class boundary enforced client-side (better UX). Backend also filters silently.
+// bike / auto = single-only. car-side = multi.
+
+const SINGLE_CLASSES = new Set(['two_wheel', 'three_wheel']);
+
+function toggleCategory(current, type, master) {
+  const meta = [
+    ...(master.two_wheel   || []),
+    ...(master.three_wheel || []),
+    ...(master.car_side    || []),
+  ].find(v => v.vehicle_type === type);
+  if (!meta) return current;
+  const already = current.includes(type);
+  if (already) return current.filter(t => t !== type);
+  // Adding: single-class types replace selection; car-side clears any single-class
+  if (SINGLE_CLASSES.has(meta.vehicle_class)) return [type];
+  const carSideTypes = new Set((master.car_side || []).map(v => v.vehicle_type));
+  return [...current.filter(t => carSideTypes.has(t)), type];
+}
+
+function CategoryPicker({ master, value, onChange, error }) {
+  // Fetch failed — backend will use OCR-detected single category as fallback. Silent skip.
+  if (error) return null;
+  if (!master) {
+    return (
+      <div className="bg-[#0f1117] border border-white/10 rounded-xl p-2.5 text-slate-500 text-[11px] flex items-center gap-2">
+        <Sp size={11} /> Loading vehicle categories...
+      </div>
+    );
+  }
+  const sections = [
+    { key: 'two_wheel',   label: '2-wheeler' },
+    { key: 'three_wheel', label: '3-wheeler' },
+    { key: 'car_side',    label: '4-wheeler' },
+  ].filter(s => (master[s.key] || []).length > 0);
+
+  return (
+    <div className="bg-[#0f1117] rounded-xl border border-white/10 p-2.5 space-y-2">
+      <p className="text-slate-500 text-[10px] uppercase tracking-wider">
+        Vehicle categories · optional (auto-detected from RC if skipped)
+      </p>
+      {sections.map(s => (
+        <div key={s.key}>
+          <p className="text-slate-600 text-[10px] mb-1">{s.label}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {master[s.key].map(v => {
+              const on = value.includes(v.vehicle_type);
+              return (
+                <button
+                  key={v.vehicle_type}
+                  type="button"
+                  onClick={() => onChange(toggleCategory(value, v.vehicle_type, master))}
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition active:scale-95
+                    ${on
+                      ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40'
+                      : 'bg-white/[0.02] text-slate-400 border-white/10 hover:border-white/20 hover:text-slate-200'}`}
+                >
+                  {v.display_name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+      <p className="text-slate-600 text-[10px] leading-relaxed">
+        2/3-wheeler is single-select. 4-wheeler allows multiple (e.g. Sedan + SUV + Luxury).
+      </p>
+    </div>
+  );
+}
+
 // ─── Upload Phase — Doc Row ───────────────────────────────────────────────────
 
-function DocUploadRow({ docType, existingDoc, stagedDoc, uploading, removing, onUpload, onRemove }) {
+function DocUploadRow({ docType, existingDoc, stagedDoc, vehicleMaster, vmError, uploading, removing, onUpload, onRemove }) {
   const [front, setFront]   = useState(null);
   const [back,  setBack]    = useState(null);
   const [number, setNumber] = useState('');
+  const [categories, setCategories] = useState([]);
 
   const isUploading = uploading === docType;
   const isRemoving  = removing === stagedDoc?.id;
@@ -214,6 +287,7 @@ function DocUploadRow({ docType, existingDoc, stagedDoc, uploading, removing, on
   const isProc      = exStatus === 'processing';
   const showUpload  = !stagedDoc && !isTerminal && !isProc;
   const wantsNumber = docType !== 'SELFIE';
+  const wantsCategories = docType === 'VEHICLE_RC';
 
   const frontUrl = stagedDoc?.file_url      || existingDoc?.file_url;
   const backUrl  = stagedDoc?.back_file_url || existingDoc?.back_file_url;
@@ -223,8 +297,8 @@ function DocUploadRow({ docType, existingDoc, stagedDoc, uploading, removing, on
 
   const doUpload = async () => {
     if (numberInvalid) return;
-    const ok = await onUpload(docType, front, back, v.normalized || '');
-    if (ok) { setFront(null); setBack(null); setNumber(''); }
+    const ok = await onUpload(docType, front, back, v.normalized || '', wantsCategories ? categories : null);
+    if (ok) { setFront(null); setBack(null); setNumber(''); setCategories([]); }
   };
 
   let iconEl, statusChip;
@@ -287,6 +361,23 @@ function DocUploadRow({ docType, existingDoc, stagedDoc, uploading, removing, on
         </div>
       )}
 
+      {/* Vehicle categories (staged RC) */}
+      {stagedDoc?.vehicle_categories?.length > 0 && (
+        <div className="ml-10 sm:ml-11 flex flex-wrap gap-1">
+          {stagedDoc.vehicle_categories.map(t => {
+            const all = vehicleMaster
+              ? [...(vehicleMaster.two_wheel || []), ...(vehicleMaster.three_wheel || []), ...(vehicleMaster.car_side || [])]
+              : [];
+            const label = all.find(v => v.vehicle_type === t)?.display_name || t;
+            return (
+              <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-500/15 text-yellow-300 border border-yellow-500/25">
+                {label}
+              </span>
+            );
+          })}
+        </div>
+      )}
+
       {/* Upload area */}
       {showUpload && (
         <div className="ml-10 sm:ml-11 space-y-2">
@@ -311,6 +402,9 @@ function DocUploadRow({ docType, existingDoc, stagedDoc, uploading, removing, on
             <FileBtn side="Front" file={front} onChange={setFront} />
             {HAS_BACK.has(docType) && <FileBtn side="Back (rec.)" file={back} onChange={setBack} />}
           </div>
+          {wantsCategories && (
+            <CategoryPicker master={vehicleMaster} value={categories} onChange={setCategories} error={vmError} />
+          )}
           {front && (
             <button onClick={doUpload} disabled={isUploading || numberInvalid}
               className="w-full py-2 rounded-xl bg-yellow-500 text-black text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-yellow-400 active:bg-yellow-600 transition disabled:opacity-60">
@@ -684,9 +778,11 @@ export default function DriverKycWorkspace() {
   const { userId, batchId: urlBatchId } = useParams();
   const nav = useNavigate();
 
-  const [driver,       setDriver]      = useState(null);
-  const [staged,       setStaged]      = useState([]);
-  const [batch,        setBatch]       = useState(null);
+  const [driver,        setDriver]        = useState(null);
+  const [staged,        setStaged]        = useState([]);
+  const [batch,         setBatch]         = useState(null);
+  const [vehicleMaster, setVehicleMaster] = useState(null);
+  const [vmError,       setVmError]       = useState('');
   const [uploading,    setUploading]   = useState(null);
   const [removing,     setRemoving]    = useState(null);
   const [triggering,   setTriggering]  = useState(false);
@@ -739,6 +835,32 @@ export default function DriverKycWorkspace() {
 
   useEffect(() => { loadDriver(); }, [loadDriver]);
 
+  // Vehicle master — one-shot fetch, grouped by class for the RC category picker
+  useEffect(() => {
+    let cancelled = false;
+    getVehicleMaster()
+      .then(res => {
+        if (cancelled) return;
+        const list = (res.data?.data || []).filter(v => v.is_active);
+        list.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+        setVehicleMaster({
+          two_wheel:   list.filter(v => v.vehicle_class === 'two_wheel'),
+          three_wheel: list.filter(v => v.vehicle_class === 'three_wheel'),
+          car_side:    list.filter(v => v.vehicle_class === 'car_side'),
+        });
+        setVmError('');
+      })
+      .catch(err => {
+        if (cancelled) return;
+        const status = err.response?.status;
+        const msg    = err.response?.data?.message || err.message;
+        // eslint-disable-next-line no-console
+        console.error('[vehicleMaster fetch failed]', status, msg);
+        setVmError(String(status || msg || 'unknown'));
+      });
+    return () => { cancelled = true; };
+  }, []);
+
   const stopPoll = () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } };
 
   const startPoll = useCallback((bid) => {
@@ -769,7 +891,7 @@ export default function DriverKycWorkspace() {
     return stopPoll;
   }, []); // eslint-disable-line
 
-  const handleUpload = async (docType, frontFile, backFile, docNumber = '') => {
+  const handleUpload = async (docType, frontFile, backFile, docNumber = '', vehicleCategories = null) => {
     setUploading(docType); setError('');
     try {
       const [front, back] = await Promise.all([
@@ -780,10 +902,12 @@ export default function DriverKycWorkspace() {
       console.log('[upload]', docType,
         'front:', frontFile?.size, '→', front?.size,
         back ? `· back: ${backFile?.size} → ${back.size}` : '',
-        docNumber ? `· number: ${docNumber}` : '');
+        docNumber ? `· number: ${docNumber}` : '',
+        vehicleCategories?.length ? `· categories: ${vehicleCategories.join(',')}` : '');
       const fd = new FormData();
       fd.append('document_type', docType);
       if (docNumber) fd.append('document_number', docNumber);
+      if (vehicleCategories?.length) fd.append('vehicle_categories', JSON.stringify(vehicleCategories));
       fd.append('file', front);
       if (back) fd.append('file_back', back);
       await stageDocument(userId, fd);
@@ -946,6 +1070,7 @@ export default function DriverKycWorkspace() {
               {DOC_TYPES.map(dt => (
                 <DocUploadRow key={dt} docType={dt}
                   existingDoc={docMap[dt]} stagedDoc={stagedMap[dt]}
+                  vehicleMaster={vehicleMaster} vmError={vmError}
                   uploading={uploading} removing={removing}
                   onUpload={handleUpload} onRemove={handleRemove} />
               ))}

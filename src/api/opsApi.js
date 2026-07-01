@@ -91,3 +91,7 @@ export const getFraudAlerts = ({ severity } = {}) =>
 // ─── Bank Verify (Ops inline penny-drop) ──────────────────────────────────────
 export const verifyDriverBank = (userId, { account_number, ifsc, name }) =>
   api.post(`/ops/kyc/drivers/${userId}/bank`, { account_number, ifsc, name });
+
+// ─── Vehicle Master (for RC category selector) ───────────────────────────────
+export const getVehicleMaster = () =>
+  api.get('/admin/pricing/vehicles');
