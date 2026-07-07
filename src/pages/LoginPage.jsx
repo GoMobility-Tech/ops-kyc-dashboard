@@ -1,46 +1,47 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { sendOtp, verifyOtp } from '../api/opsApi.js';
+import { opsLogin } from '../api/opsApi.js';
 import { setSession } from '../utils/auth.js';
-import { Shield, Phone, KeyRound, Loader2 } from 'lucide-react';
+import { Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
-  const [phone, setPhone]   = useState('');
-  const [otp, setOtp]       = useState('');
-  const [step, setStep]     = useState('phone');
-  const [loading, setLoad]  = useState(false);
-  const [error, setError]   = useState('');
+  const [email, setEmail]       = useState('');
+  const [password, setPassword] = useState('');
+  const [showPwd, setShowPwd]   = useState(false);
+  const [loading, setLoad]      = useState(false);
+  const [error, setError]       = useState('');
   const nav = useNavigate();
 
-  const handleSendOtp = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (!/^[6-9]\d{9}$/.test(phone)) return setError('Enter valid 10-digit Indian mobile number (starts with 6-9)');
-    setLoad(true); setError('');
-    try {
-      await sendOtp(phone);
-      setStep('otp');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send OTP');
-    } finally { setLoad(false); }
-  };
+    const trimmed = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return setError('Please enter a valid email');
+    if (password.length < 8 || password.length > 128) return setError('Password must be 8-128 characters');
 
-  const handleVerify = async (e) => {
-    e.preventDefault();
-    if (!otp) return setError('Enter OTP');
     setLoad(true); setError('');
     try {
-      const res = await verifyOtp(phone, otp);
+      const res = await opsLogin(trimmed, password);
       const d = res.data?.data || {};
-      const token = d.accessToken || d.token;
+      const token = d.accessToken;
+      const user  = d.user || {};
       if (!token) throw new Error('No token in response');
       setSession({
         token,
-        role: d.role || d.user?.role || 'ops_team',
-        name: d.fullName || d.name || d.user?.fullName || '',
+        role: user.role || 'ops_team',
+        name: user.fullName || '',
       });
       nav('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid OTP');
+      const status = err.response?.status;
+      const msg    = err.response?.data?.message;
+      if (status === 401) setError('Invalid email or password. Please try again.');
+      else if (status === 403) setError(msg || 'Account is deactivated. Contact your administrator.');
+      else if (status === 429) setError('Too many login attempts. Please wait 15 minutes.');
+      else if (status === 400) {
+        const first = err.response?.data?.errors?.[0]?.msg;
+        setError(first || msg || 'Validation failed');
+      }
+      else setError(msg || 'Something went wrong. Please try again.');
     } finally { setLoad(false); }
   };
 
@@ -54,48 +55,53 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-[#1a1d27] rounded-2xl p-5 sm:p-6 border border-white/5">
-          {step === 'phone' ? (
-            <form onSubmit={handleSendOtp} className="space-y-4">
-              <label className="block text-sm text-slate-400 mb-1">Admin Phone Number</label>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm text-slate-400 mb-1">Email</label>
               <div className="flex items-center gap-2 bg-[#0f1117] rounded-xl px-4 py-3 border border-white/10">
-                <Phone size={16} className="text-slate-500 shrink-0" />
-                <span className="text-slate-500 text-sm">+91</span>
+                <Mail size={16} className="text-slate-500 shrink-0" />
                 <input
-                  type="tel" maxLength={10} value={phone}
-                  onChange={e => setPhone(e.target.value.replace(/\D/, ''))}
-                  placeholder="9XXXXXXXXX"
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="you@gomobility.in"
+                  autoComplete="username"
                   className="flex-1 bg-transparent text-white outline-none text-sm"
                 />
               </div>
-              {error && <p className="text-red-400 text-xs">{error}</p>}
-              <button type="submit" disabled={loading}
-                className="w-full py-3 rounded-xl bg-yellow-500 text-black font-semibold text-sm flex items-center justify-center gap-2 hover:bg-yellow-400 transition disabled:opacity-60">
-                {loading ? <Loader2 size={16} className="animate-spin" /> : null}
-                Send OTP
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleVerify} className="space-y-4">
-              <p className="text-sm text-slate-400">OTP sent to +91 {phone}
-                <button type="button" onClick={() => setStep('phone')} className="ml-2 text-yellow-400 text-xs underline">Change</button>
-              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm text-slate-400 mb-1">Password</label>
               <div className="flex items-center gap-2 bg-[#0f1117] rounded-xl px-4 py-3 border border-white/10">
-                <KeyRound size={16} className="text-slate-500 shrink-0" />
+                <Lock size={16} className="text-slate-500 shrink-0" />
                 <input
-                  type="text" maxLength={6} value={otp}
-                  onChange={e => setOtp(e.target.value.replace(/\D/, ''))}
-                  placeholder="Enter 6-digit OTP"
-                  className="flex-1 bg-transparent text-white outline-none text-sm tracking-widest"
+                  type={showPwd ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                  className="flex-1 bg-transparent text-white outline-none text-sm"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPwd(v => !v)}
+                  className="text-slate-500 hover:text-slate-300"
+                  tabIndex={-1}
+                >
+                  {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
-              {error && <p className="text-red-400 text-xs">{error}</p>}
-              <button type="submit" disabled={loading}
-                className="w-full py-3 rounded-xl bg-yellow-500 text-black font-semibold text-sm flex items-center justify-center gap-2 hover:bg-yellow-400 transition disabled:opacity-60">
-                {loading ? <Loader2 size={16} className="animate-spin" /> : null}
-                Verify & Login
-              </button>
-            </form>
-          )}
+            </div>
+
+            {error && <p className="text-red-400 text-xs">{error}</p>}
+
+            <button type="submit" disabled={loading}
+              className="w-full py-3 rounded-xl bg-yellow-500 text-black font-semibold text-sm flex items-center justify-center gap-2 hover:bg-yellow-400 transition disabled:opacity-60">
+              {loading ? <Loader2 size={16} className="animate-spin" /> : null}
+              Login
+            </button>
+          </form>
         </div>
       </div>
     </div>

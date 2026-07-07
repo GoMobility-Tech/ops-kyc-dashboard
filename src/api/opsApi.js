@@ -10,9 +10,19 @@ api.interceptors.request.use((cfg) => {
   return cfg;
 });
 
-// ─── Admin Auth ───────────────────────────────────────────────────────────────
-export const sendOtp   = (phone)       => api.post('/auth/signin',        { phone, role: 'ops_team' });
-export const verifyOtp = (phone, otp)  => api.post('/auth/verify-signin', { phone, otp, role: 'ops_team' });
+// ─── Ops Auth ─────────────────────────────────────────────────────────────────
+export const opsLogin = (email, password) => {
+  let deviceId = localStorage.getItem('ops_device_id');
+  if (!deviceId) {
+    deviceId = (crypto.randomUUID && crypto.randomUUID()) || `web-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    localStorage.setItem('ops_device_id', deviceId);
+  }
+  return api.post('/auth/ops/login', {
+    email,
+    password,
+    device_info: { deviceId, deviceType: 'web' },
+  });
+};
 
 // ─── Driver Registration — ops-only, no OTP needed ───────────────────────────
 // POST /ops/drivers/register → single call, returns userId immediately
