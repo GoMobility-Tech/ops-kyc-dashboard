@@ -73,6 +73,16 @@ export const getBatchStatus = (userId, batchId) =>
 export const retryDeadJob = (jobId) =>
   api.post(`/ops/kyc/verify-jobs/${jobId}/retry`, {});
 
+// ─── Driver profile edit (name / phone / email) ───────────────────────────────
+export const updateDriverProfile = (userId, { fullName, phone, email } = {}) =>
+  api.patch(`/ops/drivers/${userId}/profile`, { fullName, phone, email });
+
+// ─── KYC document admin edit (extracted data / status / re-upload) ────────────
+export const editKycDocument = (docId, formData) =>
+  api.patch(`/kyc/admin/documents/${docId}/edit`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
 // ─── Manual Review Actions ────────────────────────────────────────────────────
 export const approveDocument = (docId, notes) =>
   api.post(`/kyc/admin/documents/${docId}/approve`, { notes });

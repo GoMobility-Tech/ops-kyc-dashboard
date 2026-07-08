@@ -4,13 +4,14 @@ import {
   ArrowLeft, Upload, Trash2, Play, RotateCcw, CheckCircle2,
   XCircle, Clock, AlertTriangle, Flame, Loader2, Eye, ThumbsUp,
   ThumbsDown, RefreshCw, FileText, UserCheck, ChevronDown, ChevronUp,
-  Landmark, Sparkles, Phone, Hash,
+  Landmark, Sparkles, Phone, Hash, Pencil,
 } from 'lucide-react';
 import {
   getStagedDocuments, stageDocument,
   removeStagedDocument, triggerBatchVerification, getBatchStatus,
   retryDeadJob, approveDocument, rejectDocument,
   getMyDriverDetail, verifyDriverBank, getVehicleMaster,
+  editKycDocument, updateDriverProfile,
 } from '../api/opsApi.js';
 import { compressImage } from '../utils/compressImage.js';
 import { validateDocNumber, docNumberPlaceholder, docNumberHelp } from '../utils/validateDocNumber.js';
@@ -274,7 +275,7 @@ function CategoryPicker({ master, value, onChange, error }) {
 
 // ─── Upload Phase — Doc Row ───────────────────────────────────────────────────
 
-function DocUploadRow({ docType, existingDoc, stagedDoc, vehicleMaster, vmError, uploading, removing, onUpload, onRemove }) {
+function DocUploadRow({ docType, existingDoc, stagedDoc, vehicleMaster, vmError, uploading, removing, onUpload, onRemove, onEdit }) {
   const [front, setFront]   = useState(null);
   const [back,  setBack]    = useState(null);
   const [number, setNumber] = useState('');
@@ -337,6 +338,12 @@ function DocUploadRow({ docType, existingDoc, stagedDoc, vehicleMaster, vmError,
           )}
         </div>
         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          {existingDoc?.id && onEdit && (
+            <button onClick={() => onEdit(existingDoc)} title="Edit document"
+              className="p-1.5 rounded-lg bg-purple-500/15 text-purple-400 hover:text-purple-300 active:bg-purple-500/25 transition">
+              <Pencil size={13} />
+            </button>
+          )}
           {stagedDoc && (
             <button onClick={() => onRemove(stagedDoc.id)} disabled={isRemoving}
               className="p-1.5 rounded-lg bg-red-500/15 text-red-400 hover:text-red-300 active:bg-red-500/25 transition">
@@ -432,7 +439,7 @@ function DocUploadRow({ docType, existingDoc, stagedDoc, vehicleMaster, vmError,
 
 // ─── Batch Phase — Job Row ────────────────────────────────────────────────────
 
-function BatchJobRow({ docType, job, existingDoc, approving, onApprove, onReject, onRetry, onReupload }) {
+function BatchJobRow({ docType, job, existingDoc, approving, onApprove, onReject, onRetry, onReupload, onEdit }) {
   const jobStatus       = job?.jobStatus;
   const resultDocStatus = job?.resultDocStatus;
   const doc             = job?.doc || {};
@@ -518,6 +525,12 @@ function BatchJobRow({ docType, job, existingDoc, approving, onApprove, onReject
             )}
           </div>
         </div>
+        {docId && onEdit && existingDoc && (
+          <button onClick={() => onEdit(existingDoc)} title="Edit document"
+            className="p-1.5 rounded-lg bg-purple-500/15 text-purple-400 hover:text-purple-300 active:bg-purple-500/25 transition shrink-0">
+            <Pencil size={13} />
+          </button>
+        )}
       </div>
 
       {(frontUrl || backUrl) && (
@@ -772,6 +785,149 @@ function BankSection({ userId, bankDoc, onVerified }) {
   );
 }
 
+// ─── Edit Profile Modal ───────────────────────────────────────────────────────
+
+function EditProfileModal({ driver, userId, onDone, onClose }) {
+  const [fullName, setFullName] = useState(driver?.full_name || '');
+  const [phone,    setPhone]    = useState(driver?.phone_number || '');
+  const [loading,  setLoading]  = useState(false);
+  const [err,      setErr]      = useState('');
+
+  const submit = async () => {
+    setErr('');
+    if (!fullName.trim() && !phone.trim()) return setErr('Enter at least one field to update');
+    setLoading(true);
+    try {
+      await updateDriverProfile(userId, {
+        fullName: fullName.trim() || undefined,
+        phone:    phone.trim()    || undefined,
+      });
+      onDone();
+    } catch (e) { setErr(e.response?.data?.message || 'Update failed'); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/75 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-[#1a1d27] rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 w-full sm:max-w-sm border border-white/10 shadow-2xl">
+        <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4 sm:hidden" />
+        <h3 className="text-white font-semibold mb-1">Edit Driver Profile</h3>
+        <p className="text-slate-500 text-xs mb-4 leading-relaxed">Update name or phone number for this driver.</p>
+        <label className="block text-slate-400 text-[11px] uppercase tracking-wider mb-1">Full Name</label>
+        <input value={fullName} onChange={e => setFullName(e.target.value)}
+          placeholder="Driver full name"
+          className="w-full bg-[#0f1117] rounded-xl px-3 py-2.5 text-sm text-white outline-none border border-white/10 focus:border-blue-500/40 mb-3" />
+        <label className="block text-slate-400 text-[11px] uppercase tracking-wider mb-1">Phone Number</label>
+        <input value={phone} onChange={e => setPhone(e.target.value)}
+          placeholder="+91XXXXXXXXXX" inputMode="tel"
+          className="w-full bg-[#0f1117] rounded-xl px-3 py-2.5 text-sm text-white outline-none border border-white/10 focus:border-blue-500/40 mb-4" />
+        {err && <p className="text-red-400 text-xs mb-3 leading-relaxed">{err}</p>}
+        <div className="flex gap-2">
+          <button onClick={onClose}
+            className="flex-1 py-3 rounded-xl border border-white/10 text-slate-400 text-sm hover:text-white active:bg-white/5 transition">
+            Cancel
+          </button>
+          <button onClick={submit} disabled={loading}
+            className="flex-1 py-3 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-500 active:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-1.5">
+            {loading && <Sp size={13} />} Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Edit Document Modal ──────────────────────────────────────────────────────
+
+function EditDocumentModal({ doc, onDone, onClose }) {
+  const [status,        setStatus]        = useState('');
+  const [docNumber,     setDocNumber]     = useState(doc?.document_number || '');
+  const [extractedData, setExtractedData] = useState(
+    doc?.extracted_data ? JSON.stringify(doc.extracted_data, null, 2) : ''
+  );
+  const [notes,   setNotes]   = useState('');
+  const [file,    setFile]    = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [err,     setErr]     = useState('');
+  const fileRef = useRef();
+
+  const submit = async () => {
+    setErr('');
+    if (extractedData.trim()) {
+      try { JSON.parse(extractedData); } catch { return setErr('Extracted data must be valid JSON'); }
+    }
+    const fd = new FormData();
+    if (status)               fd.append('status',         status);
+    if (docNumber.trim())     fd.append('document_number', docNumber.trim());
+    if (extractedData.trim()) fd.append('extracted_data',  extractedData.trim());
+    if (notes.trim())         fd.append('notes',           notes.trim());
+    if (file)                 fd.append('file',            file);
+    if (![...fd.entries()].length) return setErr('Change at least one field');
+    setLoading(true);
+    try { await editKycDocument(doc.id, fd); onDone(); }
+    catch (e) { setErr(e.response?.data?.message || 'Edit failed'); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/75 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-[#1a1d27] rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 w-full sm:max-w-md border border-white/10 shadow-2xl overflow-y-auto max-h-[92vh]">
+        <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4 sm:hidden" />
+        <h3 className="text-white font-semibold mb-1">Edit {DOC_LABELS[doc?.document_type] || 'Document'}</h3>
+        <p className="text-slate-500 text-xs mb-4 leading-relaxed">Admin override — audit log will be created automatically.</p>
+
+        <label className="block text-slate-400 text-[11px] uppercase tracking-wider mb-1">Status</label>
+        <select value={status} onChange={e => setStatus(e.target.value)}
+          className="w-full bg-[#0f1117] rounded-xl px-3 py-2.5 text-sm text-white outline-none border border-white/10 focus:border-purple-500/40 mb-3">
+          <option value="">— Keep current —</option>
+          <option value="auto_verified">auto_verified</option>
+          <option value="approved">approved</option>
+          <option value="manual_review">manual_review</option>
+          <option value="rejected">rejected</option>
+          <option value="pending">pending</option>
+        </select>
+
+        <label className="block text-slate-400 text-[11px] uppercase tracking-wider mb-1">Document Number</label>
+        <input value={docNumber} onChange={e => setDocNumber(e.target.value)}
+          placeholder="Leave blank to keep current"
+          className="w-full bg-[#0f1117] rounded-xl px-3 py-2.5 text-sm text-white outline-none border border-white/10 focus:border-purple-500/40 mb-3 font-mono tracking-wide" />
+
+        <label className="block text-slate-400 text-[11px] uppercase tracking-wider mb-1">Extracted Data (JSON)</label>
+        <textarea value={extractedData} onChange={e => setExtractedData(e.target.value)} rows={4}
+          placeholder='{"name": "John Doe", ...} — leave blank to keep'
+          className="w-full bg-[#0f1117] rounded-xl px-3 py-2.5 text-xs text-white outline-none border border-white/10 focus:border-purple-500/40 resize-none font-mono mb-3" />
+
+        <label className="block text-slate-400 text-[11px] uppercase tracking-wider mb-1">Replace File (optional)</label>
+        <button type="button" onClick={() => { fileRef.current.value = ''; fileRef.current.click(); }}
+          className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs transition mb-3
+            ${file ? 'border-yellow-500/50 bg-yellow-500/10 text-yellow-400' : 'border-white/10 text-slate-400 hover:border-white/20 hover:text-slate-200'}`}>
+          <Upload size={12} />
+          {file ? file.name.slice(0, 32) + (file.name.length > 32 ? '…' : '') : 'Choose new document file'}
+        </button>
+        <input ref={fileRef} type="file" accept="image/*,.pdf" className="hidden"
+          onChange={e => { const f = e.target.files?.[0]; if (f) setFile(f); e.target.value = ''; }} />
+
+        <label className="block text-slate-400 text-[11px] uppercase tracking-wider mb-1">Notes / Rejection Reason</label>
+        <input value={notes} onChange={e => setNotes(e.target.value)}
+          placeholder="Optional note for audit trail"
+          className="w-full bg-[#0f1117] rounded-xl px-3 py-2.5 text-sm text-white outline-none border border-white/10 focus:border-purple-500/40 mb-4" />
+
+        {err && <p className="text-red-400 text-xs mb-3 leading-relaxed">{err}</p>}
+        <div className="flex gap-2">
+          <button onClick={onClose}
+            className="flex-1 py-3 rounded-xl border border-white/10 text-slate-400 text-sm hover:text-white active:bg-white/5 transition">
+            Cancel
+          </button>
+          <button onClick={submit} disabled={loading}
+            className="flex-1 py-3 rounded-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-500 active:bg-purple-700 transition disabled:opacity-50 flex items-center justify-center gap-1.5">
+            {loading && <Sp size={13} />} Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function DriverKycWorkspace() {
@@ -788,6 +944,8 @@ export default function DriverKycWorkspace() {
   const [triggering,   setTriggering]  = useState(false);
   const [approving,    setApproving]   = useState(null);
   const [rejectModal,  setRejectModal] = useState(null);
+  const [editDoc,      setEditDoc]     = useState(null);
+  const [editProfile,  setEditProfile] = useState(false);
   const [error,        setError]       = useState('');
   const [loading,      setLoading]     = useState(true);
   const [pollTimedOut, setPTO]         = useState(false);
@@ -1004,6 +1162,10 @@ export default function DriverKycWorkspace() {
           <p className="text-slate-400 text-[11px] sm:text-xs">{driver?.phone_number}</p>
         </div>
         <Chip label={kyc.overall_status?.replace(/_/g, ' ') || 'not started'} color={chipColor} />
+        <button onClick={() => setEditProfile(true)} title="Edit driver profile"
+          className="p-1.5 rounded-lg bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 active:bg-white/15 transition shrink-0">
+          <Pencil size={13} />
+        </button>
         {driver?.phone_number && (
           <a href={`tel:${driver.phone_number}`}
             title="Call driver"
@@ -1072,7 +1234,8 @@ export default function DriverKycWorkspace() {
                   existingDoc={docMap[dt]} stagedDoc={stagedMap[dt]}
                   vehicleMaster={vehicleMaster} vmError={vmError}
                   uploading={uploading} removing={removing}
-                  onUpload={handleUpload} onRemove={handleRemove} />
+                  onUpload={handleUpload} onRemove={handleRemove}
+                  onEdit={setEditDoc} />
               ))}
             </div>
           </div>
@@ -1147,6 +1310,7 @@ export default function DriverKycWorkspace() {
                     onReject={(docId, type) => setRejectModal({ docId, docType: type })}
                     onRetry={handleRetry}
                     onReupload={handleNewBatch}
+                    onEdit={setEditDoc}
                   />
                 ))}
               </div>
@@ -1180,6 +1344,23 @@ export default function DriverKycWorkspace() {
             loadDriver(true);
           }}
           onClose={() => setRejectModal(null)}
+        />
+      )}
+
+      {editDoc && (
+        <EditDocumentModal
+          doc={editDoc}
+          onDone={() => { setEditDoc(null); loadDriver(true); }}
+          onClose={() => setEditDoc(null)}
+        />
+      )}
+
+      {editProfile && driver && (
+        <EditProfileModal
+          driver={driver}
+          userId={userId}
+          onDone={() => { setEditProfile(false); loadDriver(true); }}
+          onClose={() => setEditProfile(false)}
         />
       )}
     </div>
