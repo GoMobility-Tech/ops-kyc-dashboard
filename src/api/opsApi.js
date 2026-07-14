@@ -111,8 +111,8 @@ export const retryDeadJob = (jobId) =>
   api.post(`/ops/kyc/verify-jobs/${jobId}/retry`, {});
 
 // ─── Driver profile edit (name / phone / email) ───────────────────────────────
-export const updateDriverProfile = (userId, { fullName, phone, email } = {}) =>
-  api.patch(`/ops/drivers/${userId}/profile`, { fullName, phone, email });
+// export const updateDriverProfile = (userId, { fullName, phone, email } = {}) =>
+//   api.patch(`/ops/drivers/${userId}/profile`, { fullName, phone, email });
 
 // ─── KYC document admin edit (extracted data / status / re-upload) ────────────
 export const editKycDocument = (docId, formData) =>
