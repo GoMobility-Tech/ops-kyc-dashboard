@@ -3,7 +3,14 @@
 @tailwind utilities;
 
 body {
-  background-color: #0f1117;
-  color: #e2e8f0;
+  background-color: #fffdf8;
+  color: #0b0b0b;
   font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
+
+/* Scrollbar — subtle, brand-tinted */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #eae2d1; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #d9c8a1; }

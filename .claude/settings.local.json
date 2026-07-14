@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.gomobility.co.in)",
+      "Bash(curl -sL https://www.gomobility.co.in/ -o /tmp/gomob.html)",
+      "Read(//tmp/**)",
+      "Bash(npm run *)"
+    ]
+  }
+}
