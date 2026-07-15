@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search, ChevronRight, UserPlus, Users, CheckCircle2, AlertTriangle,
-  Clock, XCircle, Ban, CircleDashed, RefreshCw, ChevronDown,
+  Clock, XCircle, Ban, CircleDashed, RefreshCw, ChevronDown, ListChecks,
 } from 'lucide-react';
+import { hasModule } from '../../utils/auth.js';
 import { getMyStats, getMyDrivers } from '../../api/opsApi.js';
 import {
   Button, Input, Card, Badge, EmptyState, Spinner, Alert,
@@ -168,6 +169,11 @@ export default function MyDriversPage() {
           <p className="text-xs text-ink-muted mt-0.5">Drivers you registered or uploaded docs for</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {hasModule('all_drivers') && (
+            <Button variant="secondary" size="sm" icon={ListChecks} onClick={() => nav('/review-queue')}>
+              <span className="hidden sm:inline">Queue</span>
+            </Button>
+          )}
           <Button variant="ghost" size="sm" onClick={handleRefresh} loading={refreshing} icon={RefreshCw}>
             <span className="hidden sm:inline">Refresh</span>
           </Button>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Search, Users, KeyRound, UserPlus, ChevronRight,
+  Search, Users, KeyRound, UserPlus, ChevronRight, ListChecks,
   CheckCircle2, Clock, XCircle, Ban, CircleDashed, AlertTriangle, ChevronDown,
 } from 'lucide-react';
 import { searchDrivers } from '../../api/opsApi.js';
@@ -183,9 +183,14 @@ export default function AllDriversPage() {
           <h2 className="text-lg font-bold text-accent-navy">All Drivers</h2>
           <p className="text-xs text-ink-muted mt-0.5">Full directory — open any driver, upload docs on behalf, view OTP</p>
         </div>
-        <Button variant="primary" size="sm" icon={UserPlus} onClick={() => nav('/my-drivers/new')}>
-          Register
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="secondary" size="sm" icon={ListChecks} onClick={() => nav('/review-queue')}>
+            <span className="hidden sm:inline">Queue</span>
+          </Button>
+          <Button variant="primary" size="sm" icon={UserPlus} onClick={() => nav('/my-drivers/new')}>
+            Register
+          </Button>
+        </div>
       </div>
 
       <Card padding="sm" className="space-y-3">

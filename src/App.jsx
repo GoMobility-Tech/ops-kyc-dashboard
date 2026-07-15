@@ -14,6 +14,7 @@ import AllDriversPage       from './pages/all-drivers/AllDriversPage.jsx';
 import AllDriversDetail     from './pages/all-drivers/DetailPage.jsx';
 
 import LogsPage             from './pages/logs/LogsPage.jsx';
+import ReviewQueuePage      from './pages/review-queue/ReviewQueuePage.jsx';
 
 function RootRedirect() {
   if (!getToken()) return <Navigate to="/login" replace />;
@@ -47,6 +48,10 @@ export default function App() {
         {/* logs module */}
         <Route path="/logs"
           element={<RequireAuth moduleKey="logs"><LogsPage /></RequireAuth>} />
+
+        {/* Review queue — gated by all_drivers since it uses admin endpoints */}
+        <Route path="/review-queue"
+          element={<RequireAuth moduleKey="all_drivers"><ReviewQueuePage /></RequireAuth>} />
       </Route>
 
       <Route path="/" element={<RootRedirect />} />
