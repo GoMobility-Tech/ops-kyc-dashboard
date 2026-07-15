@@ -17,6 +17,7 @@ import BankSection from './BankSection.jsx';
 import RejectModal from './RejectModal.jsx';
 import PreCheckReport from './PreCheckReport.jsx';
 import { DOC_TYPES, OVERALL_TONE } from './constants.js';
+import { TOTAL_DOCS, DONE_STATES } from './driverStatus.js';
 
 /**
  * Shared driver KYC workspace.
@@ -290,11 +291,8 @@ export default function DriverWorkspace({ fetchDetail, backTo = '/my-drivers', t
   const doneJobs      = succeededJobs + failedJobs;
   const progress      = totalJobs > 0 ? Math.round((doneJobs / totalJobs) * 100) : 0;
 
-  const verifiedCount = allDocs.filter(d => ['auto_verified','approved','verified'].includes(d?.status)).length;
-  const totalDocs     = 6;
-  const overallPct    = driver?.completionPct != null
-    ? driver.completionPct
-    : Math.round((verifiedCount / totalDocs) * 100);
+  const verifiedCount = allDocs.filter(d => DONE_STATES.has(d?.status)).length;
+  const overallPct    = Math.round((verifiedCount / TOTAL_DOCS) * 100);
 
   return (
     <div className="max-w-4xl mx-auto px-3 sm:px-5 py-4 sm:py-5 space-y-3 sm:space-y-4">
@@ -336,7 +334,7 @@ export default function DriverWorkspace({ fetchDetail, backTo = '/my-drivers', t
         <div className="px-4 sm:px-5 pb-4 sm:pb-5">
           <div className="flex items-center justify-between text-[11px] text-brand-400/90 mb-1.5">
             <span>KYC Progress</span>
-            <span className="font-semibold text-white">{verifiedCount}/{totalDocs} verified · {overallPct}%</span>
+            <span className="font-semibold text-white">{verifiedCount}/{TOTAL_DOCS} verified · {overallPct}%</span>
           </div>
           <div className="h-2 bg-white/10 rounded-full overflow-hidden">
             <div className="h-full bg-brand-500 rounded-full transition-all" style={{ width: `${overallPct}%` }} />

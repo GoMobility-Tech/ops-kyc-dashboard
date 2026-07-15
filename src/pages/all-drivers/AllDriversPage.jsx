@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Search, Users, KeyRound, UserPlus, ChevronRight, ListChecks,
+  Users, KeyRound, UserPlus, ChevronRight, ListChecks,
   CheckCircle2, Clock, XCircle, Ban, CircleDashed, AlertTriangle, ChevronDown,
 } from 'lucide-react';
 import { searchDrivers } from '../../api/opsApi.js';
 import {
-  Button, Input, Card, Badge, EmptyState, Spinner, Alert,
-  Table, THead, TBody, TH, TR, TD,
+  Button, Card, Badge, EmptyState, Spinner, Alert,
+  Table, THead, TBody, TH, TR, TD, Select, SearchBar, DateRangeFilter,
 } from '../../components/ui';
 import OtpViewerModal from '../../components/driver/OtpViewerModal.jsx';
 import DocStatusStrip from '../../components/driver/DocStatusStrip.jsx';
+import DocStatusLegend from '../../components/driver/DocStatusLegend.jsx';
+import { computePct, countVerified, TOTAL_DOCS, hasPerDocData } from '../../components/driver/driverStatus.js';
 
 const STATUS_META = {
   verified:       { label: 'Verified',    tone: 'success', icon: CheckCircle2 },
@@ -36,43 +38,6 @@ function pick(row, ...keys) {
   return null;
 }
 
-const DONE_STATES = new Set(['verified', 'auto_verified', 'approved']);
-
-function computeCompletion(d) {
-  const explicit = pick(d, 'completionPct', 'completion_pct');
-  if (explicit != null) return {
-    pct: explicit,
-    verified: pick(d, 'verifiedDocsCount', 'verified_docs_count') ?? 0,
-    total: pick(d, 'submittedDocsCount', 'submitted_docs_count') ?? 0,
-  };
-
-  const v = pick(d, 'verifiedDocsCount', 'verified_docs_count');
-  const t = pick(d, 'submittedDocsCount', 'submitted_docs_count');
-  if (t != null && t > 0 && v != null) return { pct: Math.round((v / t) * 100), verified: v, total: t };
-
-  const breakdown = pick(d, 'docBreakdown', 'doc_breakdown');
-  if (breakdown && typeof breakdown === 'object') {
-    const vals = Object.values(breakdown);
-    const done = vals.filter(s => DONE_STATES.has(s)).length;
-    if (vals.length) return { pct: Math.round((done / vals.length) * 100), verified: done, total: vals.length };
-  }
-
-  const kyc = pick(d, 'kycStatus', 'kyc_status');
-  if (kyc && typeof kyc === 'object') {
-    const flags = ['aadhaarVerified', 'panVerified', 'dlVerified', 'rcVerified', 'selfieVerified', 'bankVerified'];
-    const done  = flags.filter(f => kyc[f]).length;
-    return { pct: Math.round((done / flags.length) * 100), verified: done, total: flags.length };
-  }
-
-  const flags2 = ['aadhaar_verified', 'pan_verified', 'dl_verified', 'rc_verified', 'selfie_verified', 'bank_verified'];
-  if (flags2.some(f => d[f] != null)) {
-    const done = flags2.filter(f => d[f]).length;
-    return { pct: Math.round((done / flags2.length) * 100), verified: done, total: flags2.length };
-  }
-
-  return { pct: 0, verified: 0, total: 0 };
-}
-
 function DriverTableRow({ driver, onOpen, onOtp }) {
   const status = pick(driver, 'overallStatus', 'overall_status') || 'not_started';
   const meta   = STATUS_META[status] || STATUS_META.not_started;
@@ -80,7 +45,9 @@ function DriverTableRow({ driver, onOpen, onOtp }) {
   const name   = pick(driver, 'fullName', 'full_name') || 'Unknown';
   const phone  = pick(driver, 'phoneNumber', 'phone_number', 'phone');
   const goId   = pick(driver, 'goId', 'go_id');
-  const { pct, verified, total } = computeCompletion(driver);
+  const verified = countVerified(driver);
+  const pct      = computePct(driver);
+  const hasDocs  = hasPerDocData(driver);
 
   return (
     <TR onClick={onOpen}>
@@ -101,7 +68,7 @@ function DriverTableRow({ driver, onOpen, onOtp }) {
         <Badge tone={meta.tone} icon={Icon}>{meta.label}</Badge>
       </TD>
       <TD>
-        <DocStatusStrip driver={driver} />
+        {hasDocs ? <DocStatusStrip driver={driver} /> : <span className="text-[11px] text-ink-faint">—</span>}
       </TD>
       <TD className="min-w-[140px]">
         <div className="flex items-center gap-2">
@@ -110,9 +77,7 @@ function DriverTableRow({ driver, onOpen, onOtp }) {
           </div>
           <span className="text-[11px] text-ink font-semibold tabular-nums w-10 text-right">{pct}%</span>
         </div>
-        {total > 0 && (
-          <p className="text-[10px] text-ink-faint mt-0.5">{verified}/{total} verified</p>
-        )}
+        <p className="text-[10px] text-ink-faint mt-0.5">{verified}/{TOTAL_DOCS} verified</p>
       </TD>
       <TD align="right">
         <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
@@ -141,6 +106,9 @@ export default function AllDriversPage() {
   const [drivers,     setDrivers]     = useState([]);
   const [filter,      setFilter]      = useState('');
   const [search,      setSearch]      = useState('');
+  const [dateFrom,    setDateFrom]    = useState('');
+  const [dateTo,      setDateTo]      = useState('');
+  const [dateField,   setDateField]   = useState('created_at');
   const [page,        setPage]        = useState(1);
   const [total,       setTotal]       = useState(0);
   const [hasMore,     setHasMore]     = useState(false);
@@ -149,11 +117,20 @@ export default function AllDriversPage() {
   const [error,       setError]       = useState('');
   const [otpFor,      setOtpFor]      = useState(null);
 
-  const fetchList = useCallback(async ({ append = false, pg = 1, status = filter, q = search } = {}) => {
+  const fetchList = useCallback(async ({
+    append = false, pg = 1,
+    status = filter, q = search,
+    from = dateFrom, to = dateTo, field = dateField,
+  } = {}) => {
     if (append) setLoadingMore(true); else setLoading(true);
     setError('');
     try {
-      const res = await searchDrivers(q, { page: pg, limit: 20, status });
+      const res = await searchDrivers(q, {
+        page: pg, limit: 20, status,
+        dateFrom: from || undefined,
+        dateTo:   to   || undefined,
+        dateField: field || undefined,
+      });
       const data = res.data?.data;
       const items = Array.isArray(data) ? data : (data?.items || data?.drivers || []);
       const nextTotal = data?.total ?? items.length;
@@ -167,9 +144,9 @@ export default function AllDriversPage() {
     } finally {
       setLoading(false); setLoadingMore(false);
     }
-  }, [filter, search]);
+  }, [filter, search, dateFrom, dateTo, dateField]);
 
-  useEffect(() => { fetchList({ pg: 1 }); /* eslint-disable-next-line */ }, [filter]);
+  useEffect(() => { fetchList({ pg: 1 }); /* eslint-disable-next-line */ }, [filter, dateFrom, dateTo, dateField]);
 
   const openDriver = (d) => {
     const uid = pick(d, 'userId', 'driverUserId', 'user_id', 'driver_user_id', 'id');
@@ -193,44 +170,42 @@ export default function AllDriversPage() {
         </div>
       </div>
 
-      <Card padding="sm" className="space-y-3">
-        <form onSubmit={(e) => { e.preventDefault(); fetchList({ pg: 1 }); }}>
-          <Input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search by name, phone, email, or GO ID… (press Enter)"
-            icon={Search}
-            suffix={
-              search && (
-                <button
-                  type="button"
-                  onClick={() => { setSearch(''); fetchList({ pg: 1, q: '' }); }}
-                  className="text-ink-faint hover:text-ink text-base leading-none shrink-0"
-                >×</button>
-              )
-            }
+      <Card padding="sm">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex-1 min-w-[220px]">
+            <label className="block text-[10px] uppercase tracking-wider text-ink-muted font-semibold mb-1">
+              Search
+            </label>
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              onSubmit={(v) => fetchList({ pg: 1, q: v })}
+              placeholder="Name, phone, email, or GO ID…"
+            />
+          </div>
+          <div className="min-w-[180px]">
+            <Select
+              label="Status"
+              value={filter}
+              onChange={setFilter}
+              options={FILTERS.map(f => ({ value: f.key, label: f.label }))}
+              placeholder="All statuses"
+            />
+          </div>
+          <DateRangeFilter
+            from={dateFrom}
+            to={dateTo}
+            field={dateField}
+            onChange={({ from, to, field }) => {
+              setDateFrom(from); setDateTo(to); setDateField(field);
+            }}
           />
-        </form>
-        <div className="flex gap-1.5 sm:gap-2 overflow-x-auto -mx-1 px-1 pb-1">
-          {FILTERS.map(f => {
-            const active = filter === f.key;
-            return (
-              <button
-                key={f.key || 'all'}
-                onClick={() => setFilter(f.key)}
-                className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium border transition whitespace-nowrap
-                  ${active
-                    ? 'bg-accent-navy text-white border-accent-navy'
-                    : 'bg-surface-soft text-ink-muted border-line hover:border-accent-navy hover:text-accent-navy'}`}
-              >
-                {f.label}
-              </button>
-            );
-          })}
         </div>
       </Card>
 
       {error && <Alert tone="danger">{error}</Alert>}
+
+      <DocStatusLegend />
 
       {loading ? (
         <div className="py-16 flex justify-center"><Spinner size={24} /></div>

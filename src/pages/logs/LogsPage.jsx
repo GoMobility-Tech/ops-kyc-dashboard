@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Filter, RefreshCw, ChevronDown, ChevronRight, ChevronUp, XCircle, ExternalLink, Bug, Clock,
+  Filter, RefreshCw, ChevronDown, ChevronUp, XCircle, ExternalLink, Bug, Clock,
 } from 'lucide-react';
 import { getApiLogs } from '../../api/opsApi.js';
 import {
-  Button, Input, Card, Badge, EmptyState, Spinner, Alert,
-  Table, THead, TBody, TH, TR, TD, JsonViewer,
+  Button, Card, Badge, EmptyState, Spinner, Alert,
+  Table, THead, TBody, TH, TR, TD, JsonViewer, Select, SearchBar,
 } from '../../components/ui';
 import { useNavigate } from 'react-router-dom';
 
@@ -162,6 +162,7 @@ export default function LogsPage() {
   const [done, setDone]           = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
   const [applying, setApplying]   = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError]         = useState('');
@@ -171,9 +172,9 @@ export default function LogsPage() {
     const isFirst = !nextCursor;
     const origin  = opts.origin || 'load';
     if (isFirst) {
-      if (origin === 'refresh') setRefreshing(true);
-      else if (origin === 'apply' || origin === 'reset') setApplying(true);
-      // origin === 'load' → initial page load; initialLoad already true, don't flip a busy flag
+      if (origin === 'refresh')     setRefreshing(true);
+      else if (origin === 'apply')  setApplying(true);
+      else if (origin === 'reset')  setResetting(true);
     } else {
       setLoadingMore(true);
     }
@@ -198,6 +199,7 @@ export default function LogsPage() {
     } finally {
       setInitialLoad(false);
       setApplying(false);
+      setResetting(false);
       setRefreshing(false);
       setLoadingMore(false);
     }
@@ -243,52 +245,51 @@ export default function LogsPage() {
       </div>
 
       <Card padding="sm">
-        <form onSubmit={applyFilters} className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
           <div className="sm:col-span-3">
-            <label className="block text-[10px] uppercase tracking-wider text-ink-muted mb-1">Module</label>
-            <select
+            <Select
+              label="Module"
               value={module}
-              onChange={e => setModule(e.target.value)}
-              className="w-full bg-white rounded-lg px-3 py-2 text-sm text-ink border border-line focus:border-accent-navy outline-none"
-            >
-              <option value="">All modules</option>
-              {KNOWN_MODULES.map(m => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
+              onChange={setModule}
+              options={[
+                { value: '', label: 'All modules' },
+                ...KNOWN_MODULES.map(m => ({ value: m, label: m })),
+              ]}
+              placeholder="All modules"
+            />
           </div>
 
           <div className="sm:col-span-5">
-            <Input
-              label="Path (partial match)"
+            <label className="block text-[10px] uppercase tracking-wider text-ink-muted font-semibold mb-1">
+              Path (partial match)
+            </label>
+            <SearchBar
               value={path}
-              onChange={e => setPath(e.target.value)}
+              onChange={setPath}
+              onSubmit={() => fetchPage(null, { origin: 'apply' })}
               placeholder="/verify-signin, /kyc/admin, /ops/me…"
             />
           </div>
 
-          <div className="sm:col-span-4 flex items-end gap-2">
-            <Button type="submit" icon={Filter} loading={applying}>Apply</Button>
-            <Button type="button" variant="outline" icon={XCircle} onClick={resetFilters} loading={applying}>Reset</Button>
+          <div className="sm:col-span-3">
+            <Select
+              label="Status"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={STATUS_FILTERS.map(f => ({ value: f.key, label: f.label }))}
+              placeholder="All statuses"
+            />
           </div>
-        </form>
 
-        <div className="flex gap-1.5 mt-3 pt-3 border-t border-line overflow-x-auto">
-          {STATUS_FILTERS.map(f => {
-            const active = statusFilter === f.key;
-            return (
-              <button
-                key={f.key || 'all'}
-                onClick={() => setStatusFilter(f.key)}
-                className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium border transition whitespace-nowrap
-                  ${active
-                    ? 'bg-accent-navy text-white border-accent-navy'
-                    : 'bg-surface-soft text-ink-muted border-line hover:border-accent-navy hover:text-accent-navy'}`}
-              >
-                {f.label}
-              </button>
-            );
-          })}
+          <div className="sm:col-span-1 flex items-end gap-2">
+            <Button type="button" icon={Filter} onClick={applyFilters} loading={applying} className="w-full">Apply</Button>
+          </div>
+        </div>
+
+        <div className="mt-3 pt-3 border-t border-line flex justify-end">
+          <Button type="button" variant="outline" size="sm" icon={XCircle} onClick={resetFilters} loading={resetting}>
+            Reset filters
+          </Button>
         </div>
       </Card>
 

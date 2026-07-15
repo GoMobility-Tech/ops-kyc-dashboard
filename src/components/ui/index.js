@@ -8,3 +8,7 @@ export { default as EmptyState } from './EmptyState.jsx';
 export { default as Alert } from './Alert.jsx';
 export { Table, THead, TBody, TH, TR, TD } from './Table.jsx';
 export { default as JsonViewer } from './JsonViewer.jsx';
+export { default as Select } from './Select.jsx';
+export { default as SearchBar } from './SearchBar.jsx';
+export { default as DateRangeFilter } from './DateRangeFilter.jsx';
+export { default as Calendar } from './Calendar.jsx';

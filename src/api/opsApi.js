@@ -54,11 +54,17 @@ export const registerDriver = ({ fullName, phone, email }) =>
   api.post('/ops/drivers/register', { fullName, phone, ...(email ? { email } : {}) });
 
 // ─── Driver Search & Detail (admin scope — `all_drivers` module) ─────────────
-export const searchDrivers = (query, { page = 1, limit = 20, status } = {}) =>
+export const searchDrivers = (query, {
+  page = 1, limit = 20, status,
+  dateFrom, dateTo, dateField,
+} = {}) =>
   api.get('/kyc/admin/drivers', {
     params: {
       ...(query ? { search: query } : {}),
       ...(status ? { status } : {}),
+      ...(dateFrom ? { dateFrom } : {}),
+      ...(dateTo   ? { dateTo }   : {}),
+      ...(dateField ? { dateField } : {}),
       page, limit,
     },
   });
@@ -70,11 +76,17 @@ export const getDriverKycDetail = (userId) =>
 export const getMyStats = () =>
   api.get('/ops/me/stats');
 
-export const getMyDrivers = ({ status, search, page = 1, limit = 20 } = {}) =>
+export const getMyDrivers = ({
+  status, search, page = 1, limit = 20,
+  dateFrom, dateTo, dateField,
+} = {}) =>
   api.get('/ops/me/drivers', {
     params: {
       ...(status ? { status } : {}),
       ...(search ? { search } : {}),
+      ...(dateFrom ? { dateFrom } : {}),
+      ...(dateTo   ? { dateTo }   : {}),
+      ...(dateField ? { dateField } : {}),
       page, limit,
     },
   });

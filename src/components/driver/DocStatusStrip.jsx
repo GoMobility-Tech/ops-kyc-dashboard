@@ -1,57 +1,41 @@
 import React from 'react';
+import { DOCS_META, DONE_STATES, statusForDoc, hasPerDocData } from './driverStatus.js';
 
-const DOCS = [
-  { key: 'aadhaar', short: 'A',  label: 'Aadhaar' },
-  { key: 'pan',     short: 'P',  label: 'PAN' },
-  { key: 'dl',      short: 'DL', label: 'DL' },
-  { key: 'rc',      short: 'RC', label: 'RC' },
-  { key: 'selfie',  short: 'S',  label: 'Selfie' },
-  { key: 'bank',    short: 'B',  label: 'Bank' },
-];
-
-const TONES = {
-  verified:       'bg-green-100  text-green-800  border-green-300',
-  auto_verified:  'bg-green-100  text-green-800  border-green-300',
-  approved:       'bg-green-100  text-green-800  border-green-300',
-  staged:         'bg-brand-100  text-brand-800  border-brand-400',
-  pending:        'bg-brand-100  text-brand-800  border-brand-400',
-  processing:     'bg-blue-100   text-blue-800   border-blue-300',
-  manual_review:  'bg-amber-100  text-amber-800  border-amber-300',
-  rejected:       'bg-red-100    text-red-800    border-red-300',
-  not_started:    'bg-white      text-ink-faint  border-line',
-  null:           'bg-white      text-ink-faint  border-line',
-};
-
-// Read a status for the given key from various row shapes.
-// Prefers `docBreakdown[key]` (from /ops/me/drivers) then flags like `aadhaarVerified`.
-function statusFor(driver, key) {
-  const bd = driver?.docBreakdown || driver?.doc_breakdown;
-  if (bd && bd[key]) return bd[key];
-
-  // Verified booleans (admin shape)
-  const camelFlag = {
-    aadhaar: 'aadhaarVerified', pan: 'panVerified', dl: 'dlVerified',
-    rc: 'rcVerified', selfie: 'selfieVerified', bank: 'bankVerified',
-  }[key];
-  const snakeFlag = camelFlag && camelFlag.replace(/([A-Z])/g, '_$1').toLowerCase();
-  const kyc = driver?.kycStatus || driver?.kyc_status || driver;
-  const flagVal = kyc?.[camelFlag] ?? driver?.[snakeFlag];
-  if (flagVal === true)  return 'verified';
-  if (flagVal === false) return 'not_started';
-  return 'not_started';
+// Status → tone mapping. Kept in sync with DocStatusLegend.
+export function toneForStatus(status) {
+  if (!status || status === 'not_started') return 'gray';   // not uploaded (neutral)
+  if (DONE_STATES.has(status))              return 'green';  // verified
+  if (status === 'manual_review')           return 'yellow'; // needs review
+  if (status === 'rejected')                return 'red';    // rejected (bad)
+  return 'blue';                                             // staged / processing / pending
 }
 
+const TONE_CLS = {
+  green:  'bg-green-100 text-green-800 border-green-400',
+  yellow: 'bg-amber-100 text-amber-800 border-amber-400',
+  red:    'bg-red-100   text-red-800   border-red-400',
+  blue:   'bg-blue-100  text-blue-800  border-blue-400',
+  gray:   'bg-surface-alt text-ink-muted border-line',
+};
+
+/**
+ * Row-level compact strip — one pill per required doc, colored by status.
+ * If the driver row has NO per-doc data, renders nothing (caller can fall back).
+ */
 export default function DocStatusStrip({ driver }) {
+  if (!hasPerDocData(driver)) return null;
+
   return (
     <div className="flex gap-1">
-      {DOCS.map(d => {
-        const st = statusFor(driver, d.key);
-        const cls = TONES[st] || TONES.not_started;
+      {DOCS_META.map(d => {
+        const st = statusForDoc(driver, d);
+        const tone = toneForStatus(st);
+        const humanStatus = (st || 'not_started').replace(/_/g, ' ');
         return (
           <span
             key={d.key}
-            title={`${d.label}: ${(st || 'not_started').replace(/_/g, ' ')}`}
-            className={`inline-flex items-center justify-center min-w-[24px] h-5 px-1 rounded border text-[10px] font-bold ${cls}`}
+            title={`${d.label}: ${humanStatus}`}
+            className={`inline-flex items-center justify-center min-w-[26px] h-5 px-1 rounded border text-[10px] font-bold ${TONE_CLS[tone]}`}
           >
             {d.short}
           </span>

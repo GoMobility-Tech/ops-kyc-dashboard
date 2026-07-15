@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Search, ChevronRight, UserPlus, Users, CheckCircle2, AlertTriangle,
+  ChevronRight, UserPlus, Users, CheckCircle2, AlertTriangle,
   Clock, XCircle, Ban, CircleDashed, RefreshCw, ChevronDown, ListChecks,
 } from 'lucide-react';
 import { hasModule } from '../../utils/auth.js';
 import { getMyStats, getMyDrivers } from '../../api/opsApi.js';
 import {
-  Button, Input, Card, Badge, EmptyState, Spinner, Alert,
-  Table, THead, TBody, TH, TR, TD,
+  Button, Card, Badge, EmptyState, Spinner, Alert,
+  Table, THead, TBody, TH, TR, TD, Select, SearchBar, DateRangeFilter,
 } from '../../components/ui';
 import DocStatusStrip from '../../components/driver/DocStatusStrip.jsx';
+import DocStatusLegend from '../../components/driver/DocStatusLegend.jsx';
+import { computePct, countVerified, TOTAL_DOCS, hasPerDocData } from '../../components/driver/driverStatus.js';
 
 const STATUS_META = {
   verified:       { label: 'Verified',       tone: 'success', icon: CheckCircle2 },
@@ -55,9 +57,9 @@ function DriverTableRow({ driver, onClick }) {
   const name   = pick(driver, 'fullName', 'full_name') || 'Unknown';
   const phone  = pick(driver, 'phoneNumber', 'phone_number', 'phone');
   const goId   = pick(driver, 'goId', 'go_id');
-  const pct    = pick(driver, 'completionPct', 'completion_pct') ?? 0;
-  const verified   = pick(driver, 'verifiedDocsCount', 'verified_docs_count') ?? 0;
-  const submitted  = pick(driver, 'submittedDocsCount', 'submitted_docs_count') ?? 0;
+  const verified   = countVerified(driver);
+  const pct        = computePct(driver);
+  const hasDocs    = hasPerDocData(driver);
   const nextAction = pick(driver, 'nextAction', 'next_action');
 
   return (
@@ -79,7 +81,7 @@ function DriverTableRow({ driver, onClick }) {
         <Badge tone={meta.tone} icon={Icon}>{meta.label}</Badge>
       </TD>
       <TD>
-        <DocStatusStrip driver={driver} />
+        {hasDocs ? <DocStatusStrip driver={driver} /> : <span className="text-[11px] text-ink-faint">—</span>}
       </TD>
       <TD className="min-w-[140px]">
         <div className="flex items-center gap-2">
@@ -88,9 +90,7 @@ function DriverTableRow({ driver, onClick }) {
           </div>
           <span className="text-[11px] text-ink font-semibold tabular-nums w-10 text-right">{pct}%</span>
         </div>
-        {submitted > 0 && (
-          <p className="text-[10px] text-ink-faint mt-0.5">{verified}/{submitted} verified</p>
-        )}
+        <p className="text-[10px] text-ink-faint mt-0.5">{verified}/{TOTAL_DOCS} verified</p>
       </TD>
       <TD className="max-w-[220px]">
         {nextAction ? (
@@ -120,6 +120,9 @@ export default function MyDriversPage() {
   const [drivers,     setDrivers]     = useState([]);
   const [filter,      setFilter]      = useState('');
   const [search,      setSearch]      = useState('');
+  const [dateFrom,    setDateFrom]    = useState('');
+  const [dateTo,      setDateTo]      = useState('');
+  const [dateField,   setDateField]   = useState('last_activity_at');
   const [page,        setPage]        = useState(1);
   const [hasMore,     setHasMore]     = useState(false);
   const [total,       setTotal]       = useState(0);
@@ -134,11 +137,20 @@ export default function MyDriversPage() {
   }, []);
 
   const fetchDrivers = useCallback(async (opts = {}) => {
-    const { append = false, status = filter, q = search, pg = 1 } = opts;
+    const {
+      append = false, pg = 1,
+      status = filter, q = search,
+      from = dateFrom, to = dateTo, field = dateField,
+    } = opts;
     if (append) setLoadingMore(true); else setLoading(true);
     setError('');
     try {
-      const res = await getMyDrivers({ status, search: q, page: pg, limit: 20 });
+      const res = await getMyDrivers({
+        status, search: q, page: pg, limit: 20,
+        dateFrom: from || undefined,
+        dateTo:   to   || undefined,
+        dateField: field || undefined,
+      });
       const data = res.data?.data;
       const items = data?.items || [];
       setDrivers(prev => append ? [...prev, ...items] : items);
@@ -150,14 +162,14 @@ export default function MyDriversPage() {
     } finally {
       setLoading(false); setLoadingMore(false);
     }
-  }, [filter, search]);
+  }, [filter, search, dateFrom, dateTo, dateField]);
 
   useEffect(() => { fetchStats(); }, [fetchStats]);
-  useEffect(() => { fetchDrivers({ status: filter, q: search, pg: 1 }); /* eslint-disable-next-line */ }, [filter]);
+  useEffect(() => { fetchDrivers({ pg: 1 }); /* eslint-disable-next-line */ }, [filter, dateFrom, dateTo, dateField]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([fetchStats(), fetchDrivers({ status: filter, q: search, pg: 1 })]);
+    await Promise.all([fetchStats(), fetchDrivers({ pg: 1 })]);
     setRefreshing(false);
   };
 
@@ -193,46 +205,46 @@ export default function MyDriversPage() {
         <StatCard label="New"      value={stats?.notStarted}    icon={CircleDashed} />
       </div>
 
-      <Card padding="sm" className="space-y-3">
-        <form onSubmit={(e) => { e.preventDefault(); fetchDrivers({ status: filter, q: search, pg: 1 }); }}>
-          <Input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search by phone, name, or GO ID… (press Enter)"
-            icon={Search}
-            suffix={
-              search && (
-                <button
-                  type="button"
-                  onClick={() => { setSearch(''); fetchDrivers({ status: filter, q: '', pg: 1 }); }}
-                  className="text-ink-faint hover:text-ink text-base leading-none shrink-0"
-                >×</button>
-              )
-            }
+      <Card padding="sm">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex-1 min-w-[220px]">
+            <label className="block text-[10px] uppercase tracking-wider text-ink-muted font-semibold mb-1">
+              Search
+            </label>
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              onSubmit={(v) => fetchDrivers({ q: v, pg: 1 })}
+              placeholder="Phone, name, or GO ID…"
+            />
+          </div>
+          <div className="min-w-[180px]">
+            <Select
+              label="Status"
+              value={filter}
+              onChange={setFilter}
+              options={FILTERS.map(f => ({
+                value: f.key,
+                label: f.label,
+                count: stats?.[f.statKey],
+              }))}
+              placeholder="All statuses"
+            />
+          </div>
+          <DateRangeFilter
+            from={dateFrom}
+            to={dateTo}
+            field={dateField}
+            onChange={({ from, to, field }) => {
+              setDateFrom(from); setDateTo(to); setDateField(field);
+            }}
           />
-        </form>
-
-        <div className="flex gap-1.5 sm:gap-2 overflow-x-auto -mx-1 px-1 pb-1">
-          {FILTERS.map(f => {
-            const count = stats?.[f.statKey];
-            const active = filter === f.key;
-            return (
-              <button
-                key={f.key || 'all'}
-                onClick={() => setFilter(f.key)}
-                className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium border transition whitespace-nowrap
-                  ${active
-                    ? 'bg-accent-navy text-white border-accent-navy'
-                    : 'bg-surface-soft text-ink-muted border-line hover:border-accent-navy hover:text-accent-navy'}`}
-              >
-                {f.label}{count != null ? ` · ${count}` : ''}
-              </button>
-            );
-          })}
         </div>
       </Card>
 
       {error && <Alert tone="danger">{error}</Alert>}
+
+      <DocStatusLegend />
 
       {loading ? (
         <div className="py-16 flex justify-center"><Spinner size={24} /></div>
