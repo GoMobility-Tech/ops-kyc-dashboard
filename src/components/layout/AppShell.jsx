@@ -19,7 +19,7 @@ export default function AppShell() {
   const title = useTitle();
 
   return (
-    <div className="min-h-screen bg-surface-soft flex">
+    <div className="min-h-screen bg-brand-100 flex">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 min-w-0 flex flex-col">
         <TopBar onOpenSidebar={() => setSidebarOpen(true)} title={title} />

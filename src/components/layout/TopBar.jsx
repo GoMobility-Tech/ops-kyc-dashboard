@@ -25,7 +25,7 @@ export default function TopBar({ onOpenSidebar, title }) {
   };
 
   return (
-    <header className="sticky top-0 z-20 h-16 bg-white border-b-2 border-brand-500 px-3 sm:px-5 flex items-center gap-3 shadow-card">
+    <header className="sticky top-0 z-20 h-16 bg-surface-soft border-b-2 border-brand-500 px-3 sm:px-5 flex items-center gap-3 shadow-card">
       <button
         onClick={onOpenSidebar}
         className="lg:hidden p-2 rounded-md text-accent-navy hover:bg-brand-100 transition"

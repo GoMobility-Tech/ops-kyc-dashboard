@@ -12,7 +12,7 @@ export default function Card({
   return (
     <Comp
       {...rest}
-      className={`bg-white rounded-xl border border-line shadow-card ${pad}
+      className={`bg-surface-soft rounded-xl border border-line shadow-card ${pad}
         ${hover ? 'hover:border-brand-500 hover:shadow-pop transition' : ''} ${className}`}
     >
       {children}

@@ -52,21 +52,24 @@ export default function BankSection({ userId, bankDoc, onVerified }) {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-line shadow-card overflow-hidden">
+    <div className="bg-surface-soft rounded-xl border border-line shadow-card overflow-hidden">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full px-3 sm:px-5 py-3 sm:py-4 flex items-center gap-3 hover:bg-surface-soft transition"
+        className={`w-full px-4 sm:px-5 py-3 sm:py-4 flex items-center gap-3 transition
+          ${isVerified ? 'bg-green-50/60 hover:bg-green-50'
+            : isRejected ? 'bg-red-50/60 hover:bg-red-50'
+            : 'hover:bg-brand-100/60'}`}
       >
-        <div className="w-8 h-8 rounded-lg bg-surface-alt flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-lg bg-accent-navy text-brand-400 flex items-center justify-center shrink-0">
           {isVerified
-            ? <CheckCircle2 size={14} className="text-accent-green" />
+            ? <CheckCircle2 size={16} className="text-accent-green" />
             : isRejected
-              ? <XCircle size={14} className="text-red-600" />
-              : <Landmark size={14} className="text-ink-muted" />}
+              ? <XCircle size={16} className="text-red-500" />
+              : <Landmark size={16} />}
         </div>
         <div className="flex-1 min-w-0 text-left">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-ink text-xs sm:text-sm font-medium">Bank Account</p>
+            <p className="text-accent-navy text-xs sm:text-sm font-semibold">Bank Account</p>
             {isVerified && <Badge tone="success">Verified</Badge>}
             {isRejected && <Badge tone="danger">Rejected</Badge>}
             {!bankDoc   && <Badge>Not added</Badge>}

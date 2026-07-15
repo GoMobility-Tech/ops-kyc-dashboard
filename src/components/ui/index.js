@@ -6,3 +6,5 @@ export { default as Modal } from './Modal.jsx';
 export { default as Spinner } from './Spinner.jsx';
 export { default as EmptyState } from './EmptyState.jsx';
 export { default as Alert } from './Alert.jsx';
+export { Table, THead, TBody, TH, TR, TD } from './Table.jsx';
+export { default as JsonViewer } from './JsonViewer.jsx';

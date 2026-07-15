@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { KeyRound, Pencil } from 'lucide-react';
 import DriverWorkspace from '../../components/driver/DriverWorkspace.jsx';
@@ -6,23 +6,22 @@ import OtpViewerModal from '../../components/driver/OtpViewerModal.jsx';
 import EditProfileModal from '../../components/driver/EditProfileModal.jsx';
 import { getDriverKycDetail } from '../../api/opsApi.js';
 
-// Toolbar rendered inside DriverWorkspace header.
-function DetailToolbar({ userId, onOtp, onEdit }) {
+function DetailToolbar({ onOtp, onEdit }) {
   return (
     <div className="flex items-center gap-1 shrink-0">
       <button
         onClick={onEdit}
         title="Edit profile"
-        className="p-1.5 rounded-lg bg-surface-alt border border-line text-ink-muted hover:text-ink hover:border-brand-500 transition"
+        className="p-2 rounded-lg bg-white/10 border border-white/20 text-brand-400 hover:bg-white/20 hover:text-white transition"
       >
-        <Pencil size={13} />
+        <Pencil size={14} />
       </button>
       <button
         onClick={onOtp}
         title="View active OTP"
-        className="p-1.5 rounded-lg bg-brand-100 border border-brand-400 text-brand-800 hover:bg-brand-200 transition"
+        className="p-2 rounded-lg bg-brand-500 text-accent-navy hover:bg-brand-400 transition"
       >
-        <KeyRound size={13} />
+        <KeyRound size={14} />
       </button>
     </div>
   );
@@ -30,25 +29,12 @@ function DetailToolbar({ userId, onOtp, onEdit }) {
 
 export default function DetailPage() {
   const { userId } = useParams();
-  const [otpOpen,  setOtpOpen]  = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
+  const [otpOpen,   setOtpOpen]   = useState(false);
+  const [editOpen,  setEditOpen]  = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
-  // We need driver data for OTP/edit modals — DriverWorkspace loads it internally.
-  // Simpler: attach a small state adapter by passing a wrapper fetchDetail.
-  const [driverBrief, setDriverBrief] = useState({});
-  const fetchDetail = async (uid) => {
-    const res = await getDriverKycDetail(uid);
-    const raw = res.data?.data;
-    if (raw?.user) {
-      setDriverBrief({
-        full_name: raw.user.fullName,
-        phone:     raw.user.phone,
-        email:     raw.user.email,
-      });
-    }
-    return res;
-  };
+  // Memoized so DriverWorkspace's useCallback deps stay stable
+  const fetchDetail = useCallback((uid) => getDriverKycDetail(uid), []);
 
   return (
     <>
@@ -58,7 +44,6 @@ export default function DetailPage() {
         backTo="/all-drivers"
         toolbar={
           <DetailToolbar
-            userId={userId}
             onOtp={() => setOtpOpen(true)}
             onEdit={() => setEditOpen(true)}
           />
@@ -68,8 +53,6 @@ export default function DetailPage() {
       {otpOpen && (
         <OtpViewerModal
           userId={userId}
-          driverName={driverBrief.full_name}
-          driverPhone={driverBrief.phone}
           onClose={() => setOtpOpen(false)}
         />
       )}
@@ -77,7 +60,6 @@ export default function DetailPage() {
       {editOpen && (
         <EditProfileModal
           userId={userId}
-          initial={driverBrief}
           onDone={() => { setEditOpen(false); setReloadKey(k => k + 1); }}
           onClose={() => setEditOpen(false)}
         />

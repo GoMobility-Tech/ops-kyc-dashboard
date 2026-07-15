@@ -2,10 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search, ChevronRight, UserPlus, Users, CheckCircle2, AlertTriangle,
-  Clock, XCircle, Ban, CircleDashed, RefreshCw, ChevronDown, Sparkles,
+  Clock, XCircle, Ban, CircleDashed, RefreshCw, ChevronDown,
 } from 'lucide-react';
 import { getMyStats, getMyDrivers } from '../../api/opsApi.js';
-import { Button, Input, Card, Badge, EmptyState, Spinner, Alert } from '../../components/ui';
+import {
+  Button, Input, Card, Badge, EmptyState, Spinner, Alert,
+  Table, THead, TBody, TH, TR, TD,
+} from '../../components/ui';
+import DocStatusStrip from '../../components/driver/DocStatusStrip.jsx';
 
 const STATUS_META = {
   verified:       { label: 'Verified',       tone: 'success', icon: CheckCircle2 },
@@ -26,9 +30,14 @@ const FILTERS = [
   { key: 'suspended',      label: 'Suspended',   statKey: 'suspended'      },
 ];
 
-function StatCard({ label, value, icon: Icon, accent }) {
+function pick(row, ...keys) {
+  for (const k of keys) if (row?.[k] != null) return row[k];
+  return null;
+}
+
+function StatCard({ label, value, icon: Icon }) {
   return (
-    <Card padding="sm" className={accent}>
+    <Card padding="sm">
       <div className="flex items-center justify-between mb-1">
         <span className="text-ink-muted text-[10px] uppercase tracking-wider truncate">{label}</span>
         {Icon && <Icon size={13} className="text-accent-navy shrink-0" />}
@@ -38,53 +47,69 @@ function StatCard({ label, value, icon: Icon, accent }) {
   );
 }
 
-function DriverRow({ driver, onClick }) {
-  const meta = STATUS_META[driver.overallStatus] || STATUS_META.not_started;
-  const Icon = meta.icon;
-  const pct  = driver.completionPct ?? 0;
+function DriverTableRow({ driver, onClick }) {
+  const status = pick(driver, 'overallStatus', 'overall_status') || 'not_started';
+  const meta   = STATUS_META[status] || STATUS_META.not_started;
+  const Icon   = meta.icon;
+  const name   = pick(driver, 'fullName', 'full_name') || 'Unknown';
+  const phone  = pick(driver, 'phoneNumber', 'phone_number', 'phone');
+  const goId   = pick(driver, 'goId', 'go_id');
+  const pct    = pick(driver, 'completionPct', 'completion_pct') ?? 0;
+  const verified   = pick(driver, 'verifiedDocsCount', 'verified_docs_count') ?? 0;
+  const submitted  = pick(driver, 'submittedDocsCount', 'submitted_docs_count') ?? 0;
+  const nextAction = pick(driver, 'nextAction', 'next_action');
 
   return (
-    <button
-      onClick={onClick}
-      className="w-full bg-white rounded-xl border border-line hover:border-brand-500 hover:shadow-card transition text-left group p-3 sm:p-4"
-    >
-      <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-full bg-brand-100 text-brand-800 font-bold text-sm flex items-center justify-center shrink-0">
-          {(driver.fullName || 'D')[0].toUpperCase()}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <p className="text-ink font-medium text-sm truncate max-w-[180px]">
-              {driver.fullName || 'Unknown'}
+    <TR onClick={onClick}>
+      <TD>
+        <div className="flex items-center gap-2.5">
+          <span className="w-9 h-9 rounded-full bg-accent-navy text-brand-400 font-bold text-xs flex items-center justify-center shrink-0 ring-1 ring-brand-500/40">
+            {name[0].toUpperCase()}
+          </span>
+          <div className="min-w-0">
+            <p className="text-ink font-medium text-sm truncate max-w-[220px]">{name}</p>
+            <p className="text-ink-muted text-[11px] truncate">
+              {phone}{goId ? ` · ${goId}` : ''}
             </p>
-            {driver.registeredByMe && (
-              <span title="Registered by you" className="text-brand-700">
-                <Sparkles size={11} />
-              </span>
-            )}
-            <Badge tone={meta.tone} icon={Icon}>{meta.label}</Badge>
           </div>
-          <p className="text-ink-muted text-[11px] mt-0.5">{driver.phoneNumber}</p>
-
-          <div className="mt-2 h-1.5 bg-surface-alt rounded-full overflow-hidden">
-            <div className="h-full bg-brand-600 rounded-full transition-all"
-              style={{ width: `${pct}%` }} />
-          </div>
-          <div className="flex justify-between items-center mt-1 text-[10px] text-ink-faint">
-            <span>{pct}% complete</span>
-            <span>{driver.verifiedDocsCount ?? 0}/{driver.submittedDocsCount ?? 0} verified</span>
-          </div>
-
-          {driver.nextAction && (
-            <p className="text-[11px] text-ink-muted mt-2 leading-snug line-clamp-2">
-              <ChevronRight size={10} className="inline -mt-0.5 mr-0.5 text-brand-600" />
-              {driver.nextAction}
-            </p>
-          )}
         </div>
-        <ChevronRight size={16} className="text-ink-faint group-hover:text-brand-700 transition mt-1 shrink-0" />
-      </div>
-    </button>
+      </TD>
+      <TD>
+        <Badge tone={meta.tone} icon={Icon}>{meta.label}</Badge>
+      </TD>
+      <TD>
+        <DocStatusStrip driver={driver} />
+      </TD>
+      <TD className="min-w-[140px]">
+        <div className="flex items-center gap-2">
+          <div className="flex-1 h-1.5 bg-brand-100 rounded-full overflow-hidden">
+            <div className="h-full bg-accent-navy rounded-full transition-all" style={{ width: `${pct}%` }} />
+          </div>
+          <span className="text-[11px] text-ink font-semibold tabular-nums w-10 text-right">{pct}%</span>
+        </div>
+        {submitted > 0 && (
+          <p className="text-[10px] text-ink-faint mt-0.5">{verified}/{submitted} verified</p>
+        )}
+      </TD>
+      <TD className="max-w-[220px]">
+        {nextAction ? (
+          <p className="text-[11px] text-ink-muted line-clamp-2 leading-snug">
+            <ChevronRight size={10} className="inline -mt-0.5 mr-0.5 text-brand-700" />
+            {nextAction}
+          </p>
+        ) : (
+          <span className="text-[11px] text-ink-faint">—</span>
+        )}
+      </TD>
+      <TD align="right">
+        <button
+          onClick={onClick}
+          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md bg-accent-navy text-white text-[11px] font-semibold hover:bg-accent-navyMid transition"
+        >
+          Open <ChevronRight size={12} />
+        </button>
+      </TD>
+    </TR>
   );
 }
 
@@ -127,9 +152,6 @@ export default function MyDriversPage() {
   }, [filter, search]);
 
   useEffect(() => { fetchStats(); }, [fetchStats]);
-
-  const runSearch = (q = search) => fetchDrivers({ status: filter, q, pg: 1 });
-
   useEffect(() => { fetchDrivers({ status: filter, q: search, pg: 1 }); /* eslint-disable-next-line */ }, [filter]);
 
   const handleRefresh = async () => {
@@ -139,8 +161,7 @@ export default function MyDriversPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-3 sm:px-5 py-4 sm:py-6 space-y-4">
-      {/* Page header */}
+    <div className="max-w-7xl mx-auto px-3 sm:px-5 py-4 sm:py-6 space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-lg font-bold text-accent-navy">My Drivers</h2>
@@ -156,7 +177,6 @@ export default function MyDriversPage() {
         </div>
       </div>
 
-      {/* Stats grid */}
       <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3">
         <StatCard label="Total"    value={stats?.totalDrivers}  icon={Users} />
         <StatCard label="Verified" value={stats?.verified}      icon={CheckCircle2} />
@@ -167,9 +187,8 @@ export default function MyDriversPage() {
         <StatCard label="New"      value={stats?.notStarted}    icon={CircleDashed} />
       </div>
 
-      {/* Search + filter */}
       <Card padding="sm" className="space-y-3">
-        <form onSubmit={(e) => { e.preventDefault(); runSearch(); }}>
+        <form onSubmit={(e) => { e.preventDefault(); fetchDrivers({ status: filter, q: search, pg: 1 }); }}>
           <Input
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -197,8 +216,8 @@ export default function MyDriversPage() {
                 onClick={() => setFilter(f.key)}
                 className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium border transition whitespace-nowrap
                   ${active
-                    ? 'bg-brand-700 text-white border-brand-700'
-                    : 'bg-white text-ink-muted border-line hover:border-brand-500 hover:text-ink'}`}
+                    ? 'bg-accent-navy text-white border-accent-navy'
+                    : 'bg-surface-soft text-ink-muted border-line hover:border-accent-navy hover:text-accent-navy'}`}
               >
                 {f.label}{count != null ? ` · ${count}` : ''}
               </button>
@@ -222,13 +241,28 @@ export default function MyDriversPage() {
         />
       ) : (
         <>
-          <p className="text-ink-faint text-xs px-1">Showing {drivers.length} of {total}</p>
-          <div className="space-y-2">
-            {drivers.map(d => (
-              <DriverRow key={d.driverUserId || d.userId} driver={d}
-                onClick={() => nav(`/my-drivers/${d.driverUserId || d.userId}`)} />
-            ))}
-          </div>
+          <p className="text-ink-muted text-xs px-1">Showing {drivers.length} of {total}</p>
+          <Table>
+            <THead>
+              <tr>
+                <TH>Driver</TH>
+                <TH>Status</TH>
+                <TH>Documents</TH>
+                <TH>Progress</TH>
+                <TH>Next Action</TH>
+                <TH align="right">Actions</TH>
+              </tr>
+            </THead>
+            <TBody>
+              {drivers.map(d => (
+                <DriverTableRow
+                  key={d.driverUserId || d.userId || d.user_id || d.id}
+                  driver={d}
+                  onClick={() => nav(`/my-drivers/${d.driverUserId || d.userId || d.user_id || d.id}`)}
+                />
+              ))}
+            </TBody>
+          </Table>
 
           {hasMore && (
             <Button

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Upload, Play, RefreshCw, CheckCircle2, XCircle,
-  AlertTriangle, Flame, UserCheck, Sparkles, Phone,
+  ArrowLeft, Upload, Play, RefreshCw, CheckCircle2,
+  AlertTriangle, Flame, Sparkles, Phone,
 } from 'lucide-react';
 import {
   getStagedDocuments, stageDocument, removeStagedDocument,
@@ -15,6 +15,7 @@ import DocUploadRow from './DocUploadRow.jsx';
 import BatchJobRow from './BatchJobRow.jsx';
 import BankSection from './BankSection.jsx';
 import RejectModal from './RejectModal.jsx';
+import PreCheckReport from './PreCheckReport.jsx';
 import { DOC_TYPES, OVERALL_TONE } from './constants.js';
 
 /**
@@ -55,45 +56,76 @@ export default function DriverWorkspace({ fetchDetail, backTo = '/my-drivers', t
   const stagedMap = Object.fromEntries(staged.map(d => [d.document_type, d]));
   const jobMap    = Object.fromEntries((batch?.jobs || []).map(j => [j.documentType, j]));
 
-  // Normalize response — /kyc/admin/* returns snake_case, /ops/me/* returns camelCase.
+  // Normalize response — supports both /kyc/admin/* (snake_case, nested `driver`)
+  // and /ops/me/* (camelCase, flat).
   const normalize = (raw) => {
     if (!raw) return null;
-    // Detect shape — admin endpoint wraps in `user`+`documents`+`kycStatus`
+
+    // /kyc/admin/drivers/:userId → { driver: {...}, documents: [...] } (snake_case)
+    if (raw.driver) {
+      const d = raw.driver;
+      const documents = (raw.documents || []).map(doc => ({
+        ...doc,
+        document_type:    doc.document_type || doc.documentType,
+        file_url:         doc.file_url      || doc.fileUrl,
+        back_file_url:    doc.back_file_url || doc.backFileUrl,
+        extracted_data:   doc.extracted_data|| doc.extractedData,
+        rejection_reason: doc.rejection_reason || doc.rejectionReason,
+        confidence_score: doc.confidence_score || doc.confidenceScore,
+      }));
+      const submitted = d.submitted_docs_count ?? 0;
+      const verified  = d.verified_docs_count  ?? 0;
+      const pct = submitted > 0 ? Math.round((verified / submitted) * 100) : 0;
+      return {
+        userId:             d.id,
+        goId:               d.go_id || d.goId,
+        full_name:          d.full_name || d.fullName,
+        phone_number:       d.phone_number || d.phoneNumber || d.phone,
+        email:              d.email,
+        documents,
+        kycStatus:          { overall_status: d.overall_status || d.overallStatus },
+        completionPct:      pct,
+        verifiedDocsCount:  verified,
+        submittedDocsCount: submitted,
+        lastActivityAt:     d.last_activity_at || d.lastActivityAt,
+        preCheckReport:     d.pre_check_report || d.preCheckReport,
+        nextAction:         null,
+      };
+    }
+
+    // Older shape with `user` wrapper (backward compat)
     if (raw.user) {
       const u = raw.user;
       const k = raw.kycStatus || {};
-      const documents = (raw.documents || []).map(d => ({
-        ...d,
-        document_type:    d.type || d.document_type,
-        file_url:         d.fileUrl || d.file_url,
-        back_file_url:    d.backFileUrl || d.back_file_url,
-        extracted_data:   d.extractedData || d.extracted_data,
-        rejection_reason: d.rejectionReason || d.rejection_reason,
-        confidence_score: d.confidenceScore || d.confidence_score,
-        status:           d.status,
-        id:               d.id,
+      const documents = (raw.documents || []).map(doc => ({
+        ...doc,
+        document_type:    doc.type || doc.document_type,
+        file_url:         doc.fileUrl || doc.file_url,
+        back_file_url:    doc.backFileUrl || doc.back_file_url,
+        extracted_data:   doc.extractedData || doc.extracted_data,
+        rejection_reason: doc.rejectionReason || doc.rejection_reason,
+        confidence_score: doc.confidenceScore || doc.confidence_score,
       }));
       return {
-        userId:           u.id,
-        goId:             u.goId,
-        full_name:        u.fullName,
-        phone_number:     u.phone,
-        email:            u.email,
+        userId:       u.id,
+        goId:         u.goId || u.go_id,
+        full_name:    u.fullName || u.full_name,
+        phone_number: u.phone || u.phone_number,
+        email:        u.email,
         documents,
-        kycStatus:        { overall_status: k.overallStatus },
-        completionPct:    null,
-        nextAction:       null,
+        kycStatus:    { overall_status: k.overallStatus || k.overall_status },
       };
     }
-    // /ops/me/* shape
-    const documents = (raw.documents || []).map(d => ({
-      ...d,
-      document_type:    d.documentType || d.document_type,
-      file_url:         d.fileUrl || d.file_url,
-      back_file_url:    d.backFileUrl || d.back_file_url,
-      extracted_data:   d.extractedData || d.extracted_data,
-      rejection_reason: d.rejectionReason || d.rejection_reason,
-      confidence_score: d.confidenceScore || d.confidence_score,
+
+    // /ops/me/* flat camelCase
+    const documents = (raw.documents || []).map(doc => ({
+      ...doc,
+      document_type:    doc.documentType || doc.document_type,
+      file_url:         doc.fileUrl || doc.file_url,
+      back_file_url:    doc.backFileUrl || doc.back_file_url,
+      extracted_data:   doc.extractedData || doc.extracted_data,
+      rejection_reason: doc.rejectionReason || doc.rejection_reason,
+      confidence_score: doc.confidenceScore || doc.confidence_score,
     }));
     return {
       ...raw,
@@ -258,31 +290,58 @@ export default function DriverWorkspace({ fetchDetail, backTo = '/my-drivers', t
   const doneJobs      = succeededJobs + failedJobs;
   const progress      = totalJobs > 0 ? Math.round((doneJobs / totalJobs) * 100) : 0;
 
+  const verifiedCount = allDocs.filter(d => ['auto_verified','approved','verified'].includes(d?.status)).length;
+  const totalDocs     = 6;
+  const overallPct    = driver?.completionPct != null
+    ? driver.completionPct
+    : Math.round((verifiedCount / totalDocs) * 100);
+
   return (
-    <div className="max-w-3xl mx-auto px-3 sm:px-5 py-4 sm:py-5 space-y-3 sm:space-y-4">
-      {/* Header */}
-      <div className="flex items-center gap-2 sm:gap-3">
-        <Button variant="ghost" size="sm" icon={ArrowLeft} onClick={() => nav(backTo)}>
-          <span className="hidden sm:inline">Back</span>
-        </Button>
-        <div className="w-9 h-9 rounded-full bg-brand-100 text-brand-800 flex items-center justify-center shrink-0">
-          <UserCheck size={15} />
+    <div className="max-w-4xl mx-auto px-3 sm:px-5 py-4 sm:py-5 space-y-3 sm:space-y-4">
+      {/* Back link */}
+      <Button variant="ghost" size="sm" icon={ArrowLeft} onClick={() => nav(backTo)}>
+        Back to list
+      </Button>
+
+      {/* Hero card — driver identity + KYC progress */}
+      <div className="rounded-2xl bg-accent-navy text-white overflow-hidden border border-brand-500/40 shadow-pop">
+        <div className="p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-brand-600 text-accent-navy font-bold text-xl flex items-center justify-center shrink-0 ring-2 ring-brand-400">
+            {(driver?.full_name || 'D')[0].toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-bold text-base sm:text-lg truncate">{driver?.full_name || 'Driver'}</p>
+              <Badge tone={tone}>{kyc.overall_status?.replace(/_/g, ' ') || 'not started'}</Badge>
+            </div>
+            <div className="mt-1 flex items-center gap-3 flex-wrap text-[11px] sm:text-xs text-brand-400/90">
+              {driver?.phone_number && <span className="inline-flex items-center gap-1"><Phone size={11} /> {driver.phone_number}</span>}
+              {driver?.email && <span className="truncate max-w-[220px]">{driver.email}</span>}
+              {driver?.goId && <span className="font-mono">{driver.goId}</span>}
+            </div>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            {driver?.phone_number && (
+              <a
+                href={`tel:${driver.phone_number}`}
+                title="Call driver"
+                className="p-2 rounded-lg bg-accent-green/20 border border-accent-green/40 text-accent-green hover:bg-accent-green/30 transition"
+              >
+                <Phone size={14} />
+              </a>
+            )}
+            {toolbar}
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-ink font-semibold text-sm truncate">{driver?.full_name || 'Driver'}</p>
-          <p className="text-ink-muted text-[11px] sm:text-xs">{driver?.phone_number}</p>
+        <div className="px-4 sm:px-5 pb-4 sm:pb-5">
+          <div className="flex items-center justify-between text-[11px] text-brand-400/90 mb-1.5">
+            <span>KYC Progress</span>
+            <span className="font-semibold text-white">{verifiedCount}/{totalDocs} verified · {overallPct}%</span>
+          </div>
+          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+            <div className="h-full bg-brand-500 rounded-full transition-all" style={{ width: `${overallPct}%` }} />
+          </div>
         </div>
-        <Badge tone={tone}>{kyc.overall_status?.replace(/_/g, ' ') || 'not started'}</Badge>
-        {driver?.phone_number && (
-          <a
-            href={`tel:${driver.phone_number}`}
-            title="Call driver"
-            className="p-1.5 rounded-lg bg-green-50 border border-green-200 text-green-800 hover:bg-green-100 transition shrink-0"
-          >
-            <Phone size={13} />
-          </a>
-        )}
-        {toolbar}
       </div>
 
       {error && <Alert tone="danger" onClose={() => setError('')}>{error}</Alert>}
@@ -296,26 +355,21 @@ export default function DriverWorkspace({ fetchDetail, backTo = '/my-drivers', t
         </Alert>
       )}
 
-      {/* Progress strip */}
-      {phase === 'upload' && driver?.completionPct != null && (
-        <Card padding="sm">
-          <div className="flex justify-between items-center text-[11px] text-ink-muted mb-1.5">
-            <span>KYC progress</span>
-            <span>{driver.verifiedDocsCount ?? 0}/{driver.submittedDocsCount ?? 0} verified · {driver.completionPct}%</span>
-          </div>
-          <div className="h-1.5 bg-surface-alt rounded-full overflow-hidden">
-            <div className="h-full bg-brand-600 rounded-full transition-all" style={{ width: `${driver.completionPct}%` }} />
-          </div>
-        </Card>
+      {/* Pre-check cross-verification report (admin scope) */}
+      {driver?.preCheckReport && phase === 'upload' && (
+        <PreCheckReport report={driver.preCheckReport} />
       )}
 
       {/* Upload phase */}
       {phase === 'upload' && (
-        <Card padding="none">
-          <div className="px-3 sm:px-5 py-3 sm:py-4 border-b border-line flex items-center justify-between gap-3">
+        <div className="rounded-xl border border-line shadow-card overflow-hidden bg-surface-soft">
+          <div className="px-4 sm:px-5 py-3 bg-accent-navy text-white flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-ink font-semibold text-sm">Documents</p>
-              <p className="text-ink-muted text-[11px] sm:text-xs mt-0.5">
+              <p className="font-semibold text-sm flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
+                Documents
+              </p>
+              <p className="text-brand-400/90 text-[11px] mt-0.5">
                 {staged.length > 0 ? `${staged.length} staged — tap Verify to run KYC` : 'Upload documents one by one'}
               </p>
             </div>
@@ -323,18 +377,17 @@ export default function DriverWorkspace({ fetchDetail, backTo = '/my-drivers', t
               const allCovered = DOC_TYPES.every(dt =>
                 stagedMap[dt] || ['auto_verified', 'approved'].includes(docMap[dt]?.status)
               );
-              const verifiedCount = Object.values(docMap).filter(d => ['auto_verified', 'approved'].includes(d?.status)).length;
+              const verifiedDocs = Object.values(docMap).filter(d => ['auto_verified', 'approved'].includes(d?.status)).length;
               return (
-                <Button
+                <button
                   onClick={handleVerify}
-                  loading={triggering}
-                  disabled={!allCovered}
-                  size="sm"
-                  icon={Play}
+                  disabled={!allCovered || triggering}
                   title={!allCovered ? 'Upload all documents first' : undefined}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand-500 text-accent-navy text-xs font-bold hover:bg-brand-400 transition disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                 >
-                  Verify ({staged.length}/{DOC_TYPES.length - verifiedCount})
-                </Button>
+                  {triggering ? <Spinner size={12} /> : <Play size={12} />}
+                  Verify ({staged.length}/{DOC_TYPES.length - verifiedDocs})
+                </button>
               );
             })()}
           </div>
@@ -354,7 +407,7 @@ export default function DriverWorkspace({ fetchDetail, backTo = '/my-drivers', t
               />
             ))}
           </div>
-        </Card>
+        </div>
       )}
 
       {phase === 'upload' && (
@@ -413,8 +466,9 @@ export default function DriverWorkspace({ fetchDetail, backTo = '/my-drivers', t
             )}
           </Card>
 
-          <Card padding="none">
-            <p className="px-3 sm:px-5 py-2.5 sm:py-3 border-b border-line text-ink-muted text-[11px] font-medium uppercase tracking-wide">
+          <div className="rounded-xl border border-line shadow-card overflow-hidden bg-surface-soft">
+            <p className="px-4 sm:px-5 py-2.5 bg-accent-navy text-brand-400 text-[11px] font-semibold uppercase tracking-wider flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
               Per-Document Results
             </p>
             <div className="divide-y divide-line">
@@ -432,7 +486,7 @@ export default function DriverWorkspace({ fetchDetail, backTo = '/my-drivers', t
                 />
               ))}
             </div>
-          </Card>
+          </div>
 
           <div className="flex gap-2">
             {pollTimedOut && (

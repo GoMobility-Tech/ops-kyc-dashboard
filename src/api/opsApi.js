@@ -170,3 +170,25 @@ export const getDriverActiveOtp = (userId) =>
   });
 
 export const isOtpActionTokenConfigured = () => Boolean(OTP_ACTION_TOKEN);
+
+// ─── API Logs (admin module) ─────────────────────────────────────────────────
+// type=1 → cursor mode (SELECT *, includes response_body, ip, user_agent)
+// omitted / type=0 → offset mode (curated 13 columns)
+export const getApiLogs = ({
+  type,           // 1 = cursor mode, undefined = offset mode
+  module,
+  path,
+  limit = 100,
+  offset,
+  beforeCreatedAt,
+} = {}) =>
+  api.get('/admin/logs', {
+    params: {
+      ...(type ? { type } : {}),
+      ...(module ? { module } : {}),
+      ...(path ? { path } : {}),
+      limit,
+      ...(offset != null ? { offset } : {}),
+      ...(beforeCreatedAt ? { beforeCreatedAt } : {}),
+    },
+  });

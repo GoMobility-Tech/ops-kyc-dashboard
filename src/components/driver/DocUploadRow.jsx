@@ -38,29 +38,35 @@ export default function DocUploadRow({
     if (ok) { setFront(null); setBack(null); setNumber(''); setCategories([]); }
   };
 
-  let iconEl, statusBadge;
+  let iconEl, statusBadge, stripe;
   if (stagedDoc) {
     iconEl = <Clock size={14} className="text-brand-700" />;
     statusBadge = <Badge tone="brand">Staged</Badge>;
+    stripe = 'border-l-4 border-brand-500 bg-brand-100/40';
   } else if (isTerminal) {
     iconEl = <CheckCircle2 size={14} className="text-accent-green" />;
     statusBadge = <Badge tone="success">{exStatus === 'approved' ? 'Approved' : 'Verified'}</Badge>;
+    stripe = 'border-l-4 border-accent-green bg-green-50/40';
   } else if (exStatus === 'rejected') {
     iconEl = <XCircle size={14} className="text-red-600" />;
     statusBadge = <Badge tone="danger">Rejected</Badge>;
+    stripe = 'border-l-4 border-red-500 bg-red-50/40';
   } else if (exStatus === 'manual_review') {
     iconEl = <AlertTriangle size={14} className="text-amber-600" />;
     statusBadge = <Badge tone="warning">Manual review</Badge>;
+    stripe = 'border-l-4 border-amber-500 bg-amber-50/40';
   } else if (isProc) {
     iconEl = <Spinner size={14} />;
     statusBadge = <Badge tone="info">Processing</Badge>;
+    stripe = 'border-l-4 border-blue-500 bg-blue-50/40';
   } else {
     iconEl = <div className="w-3 h-3 rounded-full border-2 border-line" />;
     statusBadge = null;
+    stripe = 'border-l-4 border-transparent';
   }
 
   return (
-    <div className="px-3 sm:px-5 py-3 sm:py-4 space-y-2.5">
+    <div className={`px-3 sm:px-5 py-3 sm:py-4 space-y-2.5 ${stripe}`}>
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="w-8 h-8 rounded-lg bg-surface-alt flex items-center justify-center shrink-0">{iconEl}</div>
         <div className="flex-1 min-w-0">

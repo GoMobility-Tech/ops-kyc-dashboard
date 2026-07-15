@@ -4,6 +4,7 @@
 export const MODULE_ROUTES = {
   my_drivers:  '/my-drivers',
   all_drivers: '/all-drivers',
+  logs:        '/logs',
 };
 
 export const routeFor = (moduleKey) => MODULE_ROUTES[moduleKey];

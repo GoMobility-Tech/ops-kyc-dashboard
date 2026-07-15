@@ -13,6 +13,8 @@ import MyDriversWorkspace   from './pages/my-drivers/WorkspacePage.jsx';
 import AllDriversPage       from './pages/all-drivers/AllDriversPage.jsx';
 import AllDriversDetail     from './pages/all-drivers/DetailPage.jsx';
 
+import LogsPage             from './pages/logs/LogsPage.jsx';
+
 function RootRedirect() {
   if (!getToken()) return <Navigate to="/login" replace />;
   return <Navigate to={firstAvailableRoute(getModules())} replace />;
@@ -41,6 +43,10 @@ export default function App() {
           element={<RequireAuth moduleKey="all_drivers"><AllDriversDetail /></RequireAuth>} />
         <Route path="/all-drivers/:userId/batch/:batchId"
           element={<RequireAuth moduleKey="all_drivers"><AllDriversDetail /></RequireAuth>} />
+
+        {/* logs module */}
+        <Route path="/logs"
+          element={<RequireAuth moduleKey="logs"><LogsPage /></RequireAuth>} />
       </Route>
 
       <Route path="/" element={<RootRedirect />} />
