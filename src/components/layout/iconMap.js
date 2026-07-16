@@ -1,7 +1,7 @@
 import {
   UserCheck, Users, UserPlus, Home, FileText, ListChecks, Shield,
   Search, Settings, LayoutDashboard, ClipboardList, Landmark, Car, IdCard,
-  AlertTriangle, CheckCircle2, LogOut,
+  AlertTriangle, CheckCircle2, LogOut, CreditCard, List, Receipt,
 } from 'lucide-react';
 
 // Maps backend-provided icon string keys to lucide-react components.
@@ -23,6 +23,9 @@ const map = {
   'id-card':         IdCard,
   'alert-triangle':  AlertTriangle,
   'check-circle':    CheckCircle2,
+  'credit-card':     CreditCard,
+  'list':            List,
+  'receipt':         Receipt,
 };
 
 export const getIcon = (key) => map[key] || LayoutDashboard;

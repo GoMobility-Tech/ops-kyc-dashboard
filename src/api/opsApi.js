@@ -183,6 +183,61 @@ export const getDriverActiveOtp = (userId) =>
 
 export const isOtpActionTokenConfigured = () => Boolean(OTP_ACTION_TOKEN);
 
+// ─── Payment Orders (admin module) ───────────────────────────────────────────
+export const getPaymentOrders = ({
+  status, purpose, gateway, method, userId, search,
+  dateFrom, dateTo, dateField,
+  page = 1, limit = 20,
+  type, beforeCreatedAt,
+} = {}) =>
+  api.get('/admin/payment-orders', {
+    params: {
+      ...(status ? { status } : {}),
+      ...(purpose ? { purpose } : {}),
+      ...(gateway ? { gateway } : {}),
+      ...(method ? { method } : {}),
+      ...(userId ? { userId } : {}),
+      ...(search ? { search } : {}),
+      ...(dateFrom ? { dateFrom } : {}),
+      ...(dateTo   ? { dateTo }   : {}),
+      ...(dateField ? { dateField } : {}),
+      ...(type ? { type } : {}),
+      ...(beforeCreatedAt ? { beforeCreatedAt } : {}),
+      page, limit,
+    },
+  });
+
+export const getPaymentOrderDetail = (id) =>
+  api.get(`/admin/payment-orders/${id}`);
+
+// ─── Transactions Ledger (admin module) ──────────────────────────────────────
+export const getTransactions = ({
+  type, category, status, method, userId, rideId, search,
+  dateFrom, dateTo, dateField,
+  page = 1, limit = 20,
+  mode, beforeCreatedAt,
+} = {}) =>
+  api.get('/admin/transactions-ledger', {
+    params: {
+      ...(type ? { type } : {}),
+      ...(category ? { category } : {}),
+      ...(status ? { status } : {}),
+      ...(method ? { method } : {}),
+      ...(userId ? { userId } : {}),
+      ...(rideId ? { rideId } : {}),
+      ...(search ? { search } : {}),
+      ...(dateFrom ? { dateFrom } : {}),
+      ...(dateTo   ? { dateTo }   : {}),
+      ...(dateField ? { dateField } : {}),
+      ...(mode ? { mode } : {}),
+      ...(beforeCreatedAt ? { beforeCreatedAt } : {}),
+      page, limit,
+    },
+  });
+
+export const getTransactionDetail = (id) =>
+  api.get(`/admin/transactions-ledger/${id}`);
+
 // ─── API Logs (admin module) ─────────────────────────────────────────────────
 // type=1 → cursor mode (SELECT *, includes response_body, ip, user_agent)
 // omitted / type=0 → offset mode (curated 13 columns)

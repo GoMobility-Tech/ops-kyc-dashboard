@@ -2,9 +2,11 @@
 // Silently skip unknown module keys (backend may ship new modules ahead of the frontend).
 
 export const MODULE_ROUTES = {
-  my_drivers:  '/my-drivers',
-  all_drivers: '/all-drivers',
-  logs:        '/logs',
+  my_drivers:     '/my-drivers',
+  all_drivers:    '/all-drivers',
+  payment_orders: '/payment-orders',
+  transactions:   '/transactions',
+  logs:           '/logs',
 };
 
 export const routeFor = (moduleKey) => MODULE_ROUTES[moduleKey];

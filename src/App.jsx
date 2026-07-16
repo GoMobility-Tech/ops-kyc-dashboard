@@ -15,6 +15,8 @@ import AllDriversDetail     from './pages/all-drivers/DetailPage.jsx';
 
 import LogsPage             from './pages/logs/LogsPage.jsx';
 import ReviewQueuePage      from './pages/review-queue/ReviewQueuePage.jsx';
+import PaymentOrdersPage    from './pages/payment-orders/PaymentOrdersPage.jsx';
+import TransactionsPage     from './pages/transactions/TransactionsPage.jsx';
 
 function RootRedirect() {
   if (!getToken()) return <Navigate to="/login" replace />;
@@ -44,6 +46,14 @@ export default function App() {
           element={<RequireAuth moduleKey="all_drivers"><AllDriversDetail /></RequireAuth>} />
         <Route path="/all-drivers/:userId/batch/:batchId"
           element={<RequireAuth moduleKey="all_drivers"><AllDriversDetail /></RequireAuth>} />
+
+        {/* payment_orders module */}
+        <Route path="/payment-orders"
+          element={<RequireAuth moduleKey="payment_orders"><PaymentOrdersPage /></RequireAuth>} />
+
+        {/* transactions module */}
+        <Route path="/transactions"
+          element={<RequireAuth moduleKey="transactions"><TransactionsPage /></RequireAuth>} />
 
         {/* logs module */}
         <Route path="/logs"
