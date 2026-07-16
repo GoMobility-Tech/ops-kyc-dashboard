@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   RefreshCw, ChevronDown, ChevronRight, Receipt, ArrowUpRight, ArrowDownLeft,
   CheckCircle2, XCircle, Clock, RotateCcw,
@@ -195,7 +196,25 @@ export default function TransactionsPage() {
   const [refreshing,  setRefreshing]  = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
-  const [openId, setOpenId] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [openId, setOpenId] = useState(() => {
+    const v = searchParams.get('open');
+    return v ? Number(v) : null;
+  });
+
+  useEffect(() => {
+    const v = searchParams.get('open');
+    if (v) setOpenId(Number(v));
+  }, [searchParams]);
+
+  const closeModal = () => {
+    setOpenId(null);
+    if (searchParams.get('open')) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('open');
+      setSearchParams(next, { replace: true });
+    }
+  };
 
   const load = useCallback(async ({ pg = 1, append = false, origin = 'load' } = {}) => {
     if (origin === 'refresh') setRefreshing(true);
@@ -341,7 +360,7 @@ export default function TransactionsPage() {
         </>
       )}
 
-      {openId && <TxDetailModal id={openId} onClose={() => setOpenId(null)} />}
+      {openId && <TxDetailModal id={openId} onClose={closeModal} />}
     </div>
   );
 }

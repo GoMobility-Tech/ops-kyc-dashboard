@@ -189,6 +189,7 @@ export const getPaymentOrders = ({
   dateFrom, dateTo, dateField,
   page = 1, limit = 20,
   type, beforeCreatedAt,
+  abandoned,
 } = {}) =>
   api.get('/admin/payment-orders', {
     params: {
@@ -203,6 +204,7 @@ export const getPaymentOrders = ({
       ...(dateField ? { dateField } : {}),
       ...(type ? { type } : {}),
       ...(beforeCreatedAt ? { beforeCreatedAt } : {}),
+      ...(abandoned && abandoned !== 'all' ? { abandoned } : {}),
       page, limit,
     },
   });
