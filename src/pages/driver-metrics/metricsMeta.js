@@ -74,14 +74,6 @@ export const fmtYmd = (ymd) => {
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-/** Minutes since an instant — used for the "last ping X min ago" staleness copy. */
-export const minutesSince = (iso) => {
-  if (!iso) return null;
-  const t = Date.parse(iso);
-  if (isNaN(t)) return null;
-  return Math.max(0, Math.round((Date.now() - t) / 60000));
-};
-
 // ─── Durations ───────────────────────────────────────────────────────────────
 
 /** Fallback for the rare payload that carries seconds without a label. */
