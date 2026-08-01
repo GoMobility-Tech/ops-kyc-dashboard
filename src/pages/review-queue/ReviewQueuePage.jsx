@@ -5,6 +5,7 @@ import {
   FileText, CreditCard, Car, IdCard, User, Landmark,
 } from 'lucide-react';
 import { getReviewQueue, getDocumentDetail, approveDocument } from '../../api/opsApi.js';
+import useUrlFilters from '../../utils/useUrlFilters.js';
 import {
   Button, Card, Badge, EmptyState, Spinner, Alert,
   Table, THead, TBody, TH, TR, TD, Modal, JsonViewer,
@@ -32,6 +33,9 @@ const DOC_ICONS = {
 };
 
 const TYPE_FILTERS = ['', 'AADHAAR', 'PAN', 'DRIVING_LICENCE', 'VEHICLE_RC', 'SELFIE', 'BANK_ACCOUNT'];
+
+// Filters live in the URL — see useUrlFilters
+const DEFAULT_FILTERS = { type: '', status: 'manual_review' };
 
 const STATUS_FILTERS = [
   { key: 'manual_review', label: 'Manual Review' },
@@ -173,8 +177,7 @@ function DocDetailModal({ docId, onClose, onDone }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function ReviewQueuePage() {
   const nav = useNavigate();
-  const [type,   setType]   = useState('');
-  const [status, setStatus] = useState('manual_review');
+  const [f, setFilter] = useUrlFilters(DEFAULT_FILTERS);
   const [items,  setItems]  = useState([]);
   const [total,  setTotal]  = useState(0);
   const [page,   setPage]   = useState(1);
@@ -189,7 +192,7 @@ export default function ReviewQueuePage() {
     if (append) setLoadingMore(true);
     setError('');
     try {
-      const res = await getReviewQueue({ type: type || undefined, status, page: pg, limit: 20 });
+      const res = await getReviewQueue({ type: f.type || undefined, status: f.status, page: pg, limit: 20 });
       const d = res.data?.data;
       const rows = d?.items || [];
       setItems(prev => append ? [...prev, ...rows] : rows);
@@ -202,7 +205,7 @@ export default function ReviewQueuePage() {
       setRefreshing(false);
       setLoadingMore(false);
     }
-  }, [type, status]);
+  }, [f]);
 
   useEffect(() => { load({ pg: 1 }); }, [load]);
 
@@ -232,11 +235,11 @@ export default function ReviewQueuePage() {
           </p>
           <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
             {TYPE_FILTERS.map(t => {
-              const active = type === t;
+              const active = f.type === t;
               return (
                 <button
                   key={t || 'all'}
-                  onClick={() => setType(t)}
+                  onClick={() => setFilter({ type: t })}
                   className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium border transition whitespace-nowrap
                     ${active
                       ? 'bg-accent-navy text-white border-accent-navy'
@@ -252,11 +255,11 @@ export default function ReviewQueuePage() {
           <p className="text-ink-muted text-[10px] uppercase tracking-wider mb-1.5">Status</p>
           <div className="flex gap-1.5">
             {STATUS_FILTERS.map(s => {
-              const active = status === s.key;
+              const active = f.status === s.key;
               return (
                 <button
                   key={s.key}
-                  onClick={() => setStatus(s.key)}
+                  onClick={() => setFilter({ status: s.key })}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition whitespace-nowrap
                     ${active
                       ? 'bg-accent-navy text-white border-accent-navy'

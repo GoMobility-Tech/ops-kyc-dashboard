@@ -16,6 +16,11 @@ import AllDriversDetail     from './pages/all-drivers/DetailPage.jsx';
 import PassengerKycPage     from './pages/passenger-kyc/PassengerKycPage.jsx';
 import PassengerKycDetail   from './pages/passenger-kyc/PassengerDetailPage.jsx';
 
+import DriversListPage      from './pages/driver-metrics/DriversListPage.jsx';
+import LiveMapPage          from './pages/driver-metrics/LiveMapPage.jsx';
+import DriverMetricsDetail  from './pages/driver-metrics/DriverDetailPage.jsx';
+import FleetAnalyticsPage   from './pages/driver-metrics/FleetAnalyticsPage.jsx';
+
 import LogsPage             from './pages/logs/LogsPage.jsx';
 import ReviewQueuePage      from './pages/review-queue/ReviewQueuePage.jsx';
 import PaymentOrdersPage    from './pages/payment-orders/PaymentOrdersPage.jsx';
@@ -63,6 +68,17 @@ export default function App() {
           element={<RequireAuth moduleKey="passenger_kyc"><PassengerKycPage /></RequireAuth>} />
         <Route path="/passenger-kyc/:userId"
           element={<RequireAuth moduleKey="passenger_kyc"><PassengerKycDetail /></RequireAuth>} />
+
+        {/* driver_metrics module — the roster is the entry point; the live map
+            is a companion view that only ever shows online drivers */}
+        <Route path="/driver-metrics"
+          element={<RequireAuth moduleKey="driver_metrics"><DriversListPage /></RequireAuth>} />
+        <Route path="/driver-metrics/map"
+          element={<RequireAuth moduleKey="driver_metrics"><LiveMapPage /></RequireAuth>} />
+        <Route path="/driver-metrics/fleet"
+          element={<RequireAuth moduleKey="driver_metrics"><FleetAnalyticsPage /></RequireAuth>} />
+        <Route path="/driver-metrics/drivers/:driverId"
+          element={<RequireAuth moduleKey="driver_metrics"><DriverMetricsDetail /></RequireAuth>} />
 
         {/* logs module */}
         <Route path="/logs"

@@ -5,11 +5,18 @@ import {
   CheckCircle2, XCircle, Clock, Ban, RotateCcw, AlertTriangle, Receipt, ArrowUpRight, ArrowDownLeft,
 } from 'lucide-react';
 import { getPaymentOrders, getPaymentOrderDetail } from '../../api/opsApi.js';
+import useUrlFilters from '../../utils/useUrlFilters.js';
 import {
   Button, Card, Badge, EmptyState, Spinner, Alert,
   Table, THead, TBody, TH, TR, TD,
   Select, SearchBar, DateRangeFilter, Modal, JsonViewer,
 } from '../../components/ui';
+
+// Filters live in the URL — see useUrlFilters
+const DEFAULT_FILTERS = {
+  status: '', purpose: '', gateway: '', method: '', abandoned: 'all',
+  q: '', from: '', to: '', dateField: 'created_at',
+};
 
 const STATUS_META = {
   created:            { label: 'Created',      tone: 'neutral', icon: Clock },
@@ -270,15 +277,7 @@ const ABANDONED_OPTS = [
 
 export default function PaymentOrdersPage() {
   const navigate = useNavigate();
-  const [status,  setStatus]  = useState('');
-  const [purpose, setPurpose] = useState('');
-  const [gateway, setGateway] = useState('');
-  const [method,  setMethod]  = useState('');
-  const [abandoned, setAbandoned] = useState('all');
-  const [search,  setSearch]  = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo,   setDateTo]   = useState('');
-  const [dateField,setDateField]= useState('created_at');
+  const [f, setFilter] = useUrlFilters(DEFAULT_FILTERS);
 
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
@@ -296,10 +295,11 @@ export default function PaymentOrdersPage() {
     setError('');
     try {
       const res = await getPaymentOrders({
-        status, purpose, gateway, method, search, abandoned,
-        dateFrom: dateFrom || undefined,
-        dateTo:   dateTo   || undefined,
-        dateField,
+        status: f.status, purpose: f.purpose, gateway: f.gateway,
+        method: f.method, search: f.q, abandoned: f.abandoned,
+        dateFrom: f.from || undefined,
+        dateTo:   f.to   || undefined,
+        dateField: f.dateField,
         page: pg, limit: 20,
       });
       const d = res.data?.data || {};
@@ -312,7 +312,7 @@ export default function PaymentOrdersPage() {
     } finally {
       setInitialLoad(false); setRefreshing(false); setLoadingMore(false);
     }
-  }, [status, purpose, gateway, method, search, abandoned, dateFrom, dateTo, dateField]);
+  }, [f]);
 
   useEffect(() => { load({ pg: 1 }); }, [load]);
 
@@ -337,38 +337,37 @@ export default function PaymentOrdersPage() {
           <div className="flex-1 min-w-[220px]">
             <label className="block text-[10px] uppercase tracking-wider text-ink-muted font-semibold mb-1">Search</label>
             <SearchBar
-              value={search}
-              onChange={setSearch}
-              onSubmit={() => load({ pg: 1 })}
+              value={f.q}
+              onSubmit={(v) => (v === f.q ? load({ pg: 1 }) : setFilter({ q: v }))}
               placeholder="Order/payment id, phone, name, GO ID…"
             />
           </div>
-          <Select label="Status"  value={status}  onChange={setStatus}  options={STATUS_OPTS}  className="min-w-[160px]" />
-          <Select label="Purpose" value={purpose} onChange={setPurpose} options={PURPOSE_OPTS} className="min-w-[170px]" />
-          <Select label="Gateway" value={gateway} onChange={setGateway} options={GATEWAY_OPTS} className="min-w-[140px]" />
-          <Select label="Method"  value={method}  onChange={setMethod}  options={METHOD_OPTS}  className="min-w-[140px]" />
+          <Select label="Status"  value={f.status}  onChange={(v) => setFilter({ status: v })}  options={STATUS_OPTS}  className="min-w-[160px]" />
+          <Select label="Purpose" value={f.purpose} onChange={(v) => setFilter({ purpose: v })} options={PURPOSE_OPTS} className="min-w-[170px]" />
+          <Select label="Gateway" value={f.gateway} onChange={(v) => setFilter({ gateway: v })} options={GATEWAY_OPTS} className="min-w-[140px]" />
+          <Select label="Method"  value={f.method}  onChange={(v) => setFilter({ method: v })}  options={METHOD_OPTS}  className="min-w-[140px]" />
         </div>
         <DateRangeFilter
-          from={dateFrom}
-          to={dateTo}
-          field={dateField}
+          from={f.from}
+          to={f.to}
+          field={f.dateField}
           fieldOptions={[
             { value: 'created_at', label: 'Created At' },
             { value: 'paid_at',    label: 'Paid At' },
           ]}
-          onChange={({ from, to, field }) => { setDateFrom(from); setDateTo(to); setDateField(field); }}
+          onChange={({ from, to, field }) => setFilter({ from, to, dateField: field })}
         />
 
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[10px] uppercase tracking-wider text-ink-muted font-semibold">Abandoned:</span>
           <div className="inline-flex rounded-md border border-line overflow-hidden">
             {ABANDONED_OPTS.map(opt => {
-              const active = abandoned === opt.value;
+              const active = f.abandoned === opt.value;
               return (
                 <button
                   key={opt.value}
                   type="button"
-                  onClick={() => setAbandoned(opt.value)}
+                  onClick={() => setFilter({ abandoned: opt.value })}
                   className={`px-2.5 py-1 text-[11px] font-semibold border-r border-line last:border-r-0 transition ${
                     active ? 'bg-accent-navy text-white' : 'bg-white text-ink-muted hover:bg-brand-50'
                   }`}

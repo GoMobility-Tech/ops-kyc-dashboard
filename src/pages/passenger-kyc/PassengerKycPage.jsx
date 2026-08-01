@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Flag, ChevronRight, ChevronDown, ScanFace } from 'lucide-react';
 import { getPassengerKycList } from '../../api/opsApi.js';
+import useUrlFilters from '../../utils/useUrlFilters.js';
 import {
   Button, Card, Badge, EmptyState, Spinner, Alert,
   Table, THead, TBody, TH, TR, TD, Select, SearchBar,
@@ -13,6 +14,9 @@ import {
 } from './passengerMeta.js';
 
 const PAGE_SIZE = 20;
+
+// Filters live in the URL — see useUrlFilters. Watchlist first by default.
+const DEFAULT_FILTERS = { flagged: '1', status: '', q: '' };
 
 function FaceScore({ score }) {
   if (score == null) return <span className="text-[11px] text-ink-faint">—</span>;
@@ -82,10 +86,8 @@ function PassengerRow({ row, onOpen }) {
 
 export default function PassengerKycPage() {
   const nav = useNavigate();
+  const [f, setFilter] = useUrlFilters(DEFAULT_FILTERS);
   const [rows,        setRows]        = useState([]);
-  const [flagged,     setFlagged]     = useState('1'); // watchlist first
-  const [status,      setStatus]      = useState('');
-  const [search,      setSearch]      = useState('');
   const [page,        setPage]        = useState(1);
   const [total,       setTotal]       = useState(0);
   const [hasMore,     setHasMore]     = useState(false);
@@ -93,15 +95,12 @@ export default function PassengerKycPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error,       setError]       = useState('');
 
-  const fetchList = useCallback(async ({
-    append = false, pg = 1,
-    fl = flagged, st = status, q = search,
-  } = {}) => {
+  const fetchList = useCallback(async ({ append = false, pg = 1 } = {}) => {
     if (append) setLoadingMore(true); else setLoading(true);
     setError('');
     try {
       const res  = await getPassengerKycList({
-        flagged: fl, status: st, search: q, page: pg, limit: PAGE_SIZE,
+        flagged: f.flagged, status: f.status, search: f.q, page: pg, limit: PAGE_SIZE,
       });
       const data  = res.data?.data;
       const items = Array.isArray(data) ? data : (data?.items || []);
@@ -114,9 +113,9 @@ export default function PassengerKycPage() {
     } finally {
       setLoading(false); setLoadingMore(false);
     }
-  }, [flagged, status, search]);
+  }, [f]);
 
-  useEffect(() => { fetchList({ pg: 1 }); /* eslint-disable-next-line */ }, [flagged, status]);
+  useEffect(() => { fetchList({ pg: 1 }); }, [fetchList]);
 
   const openPassenger = (row) => {
     if (row.user_id) nav(`/passenger-kyc/${row.user_id}`);
@@ -145,17 +144,16 @@ export default function PassengerKycPage() {
               Search
             </label>
             <SearchBar
-              value={search}
-              onChange={setSearch}
-              onSubmit={(v) => fetchList({ pg: 1, q: v })}
+              value={f.q}
+              onSubmit={(v) => (v === f.q ? fetchList({ pg: 1 }) : setFilter({ q: v }))}
               placeholder="Phone, name, email, or GO ID…"
             />
           </div>
           <div className="min-w-[170px]">
             <Select
               label="Flags"
-              value={flagged}
-              onChange={setFlagged}
+              value={f.flagged}
+              onChange={(v) => setFilter({ flagged: v })}
               options={FLAG_FILTERS}
               placeholder="All passengers"
             />
@@ -163,8 +161,8 @@ export default function PassengerKycPage() {
           <div className="min-w-[170px]">
             <Select
               label="KYC status"
-              value={status}
-              onChange={setStatus}
+              value={f.status}
+              onChange={(v) => setFilter({ status: v })}
               options={STATUS_FILTERS}
               placeholder="All statuses"
             />
@@ -178,15 +176,15 @@ export default function PassengerKycPage() {
         <div className="py-16 flex justify-center"><Spinner size={24} /></div>
       ) : rows.length === 0 ? (
         <EmptyState
-          icon={flagged === '1' ? Flag : Users}
-          title={flagged === '1' ? 'No flagged passengers' : 'No passengers found'}
+          icon={f.flagged === '1' ? Flag : Users}
+          title={f.flagged === '1' ? 'No flagged passengers' : 'No passengers found'}
           description={
-            flagged === '1'
+            f.flagged === '1'
               ? 'Nothing on the watchlist right now — switch to "All passengers" to browse everyone.'
-              : search ? 'Try a different search term or filter' : 'No records match these filters'
+              : f.q ? 'Try a different search term or filter' : 'No records match these filters'
           }
-          action={flagged !== '' && (
-            <Button variant="secondary" size="sm" onClick={() => setFlagged('')}>
+          action={f.flagged !== '' && (
+            <Button variant="secondary" size="sm" onClick={() => setFilter({ flagged: '' })}>
               Show all passengers
             </Button>
           )}
@@ -195,7 +193,7 @@ export default function PassengerKycPage() {
         <>
           <p className="text-ink-muted text-xs px-1">
             Showing {rows.length}{total ? ` of ${total}` : ''}
-            {flagged === '1' ? ' flagged' : ''}
+            {f.flagged === '1' ? ' flagged' : ''}
           </p>
           <Table>
             <THead>

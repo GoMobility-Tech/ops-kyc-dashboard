@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { hasModule } from '../../utils/auth.js';
 import { getMyStats, getMyDrivers } from '../../api/opsApi.js';
+import useUrlFilters from '../../utils/useUrlFilters.js';
 import {
   Button, Card, Badge, EmptyState, Spinner, Alert,
   Table, THead, TBody, TH, TR, TD, Select, SearchBar, DateRangeFilter,
@@ -21,6 +22,11 @@ const STATUS_META = {
   rejected:       { label: 'Rejected',       tone: 'danger',  icon: XCircle },
   suspended:      { label: 'Suspended',      tone: 'warning', icon: Ban },
   not_started:    { label: 'Not Started',    tone: 'neutral', icon: CircleDashed },
+};
+
+// Filters live in the URL — see useUrlFilters
+const DEFAULT_FILTERS = {
+  status: '', q: '', from: '', to: '', dateField: 'last_activity_at',
 };
 
 const FILTERS = [
@@ -116,13 +122,9 @@ function DriverTableRow({ driver, onClick }) {
 
 export default function MyDriversPage() {
   const nav = useNavigate();
+  const [f, setFilter] = useUrlFilters(DEFAULT_FILTERS);
   const [stats,       setStats]       = useState(null);
   const [drivers,     setDrivers]     = useState([]);
-  const [filter,      setFilter]      = useState('');
-  const [search,      setSearch]      = useState('');
-  const [dateFrom,    setDateFrom]    = useState('');
-  const [dateTo,      setDateTo]      = useState('');
-  const [dateField,   setDateField]   = useState('last_activity_at');
   const [page,        setPage]        = useState(1);
   const [hasMore,     setHasMore]     = useState(false);
   const [total,       setTotal]       = useState(0);
@@ -136,20 +138,15 @@ export default function MyDriversPage() {
     catch { /* non-fatal */ }
   }, []);
 
-  const fetchDrivers = useCallback(async (opts = {}) => {
-    const {
-      append = false, pg = 1,
-      status = filter, q = search,
-      from = dateFrom, to = dateTo, field = dateField,
-    } = opts;
+  const fetchDrivers = useCallback(async ({ append = false, pg = 1 } = {}) => {
     if (append) setLoadingMore(true); else setLoading(true);
     setError('');
     try {
       const res = await getMyDrivers({
-        status, search: q, page: pg, limit: 20,
-        dateFrom: from || undefined,
-        dateTo:   to   || undefined,
-        dateField: field || undefined,
+        status: f.status, search: f.q, page: pg, limit: 20,
+        dateFrom: f.from || undefined,
+        dateTo:   f.to   || undefined,
+        dateField: f.dateField || undefined,
       });
       const data = res.data?.data;
       const items = data?.items || [];
@@ -162,10 +159,10 @@ export default function MyDriversPage() {
     } finally {
       setLoading(false); setLoadingMore(false);
     }
-  }, [filter, search, dateFrom, dateTo, dateField]);
+  }, [f]);
 
   useEffect(() => { fetchStats(); }, [fetchStats]);
-  useEffect(() => { fetchDrivers({ pg: 1 }); /* eslint-disable-next-line */ }, [filter, dateFrom, dateTo, dateField]);
+  useEffect(() => { fetchDrivers({ pg: 1 }); }, [fetchDrivers]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -212,32 +209,29 @@ export default function MyDriversPage() {
               Search
             </label>
             <SearchBar
-              value={search}
-              onChange={setSearch}
-              onSubmit={(v) => fetchDrivers({ q: v, pg: 1 })}
+              value={f.q}
+              onSubmit={(v) => (v === f.q ? fetchDrivers({ pg: 1 }) : setFilter({ q: v }))}
               placeholder="Phone, name, or GO ID…"
             />
           </div>
           <div className="min-w-[180px]">
             <Select
               label="Status"
-              value={filter}
-              onChange={setFilter}
-              options={FILTERS.map(f => ({
-                value: f.key,
-                label: f.label,
-                count: stats?.[f.statKey],
+              value={f.status}
+              onChange={(v) => setFilter({ status: v })}
+              options={FILTERS.map(opt => ({
+                value: opt.key,
+                label: opt.label,
+                count: stats?.[opt.statKey],
               }))}
               placeholder="All statuses"
             />
           </div>
           <DateRangeFilter
-            from={dateFrom}
-            to={dateTo}
-            field={dateField}
-            onChange={({ from, to, field }) => {
-              setDateFrom(from); setDateTo(to); setDateField(field);
-            }}
+            from={f.from}
+            to={f.to}
+            field={f.dateField}
+            onChange={({ from, to, field }) => setFilter({ from, to, dateField: field })}
           />
         </div>
       </Card>
@@ -251,9 +245,9 @@ export default function MyDriversPage() {
       ) : drivers.length === 0 ? (
         <EmptyState
           icon={Users}
-          title={search || filter ? 'No drivers match' : 'No drivers yet'}
-          description={search || filter ? 'Try a different filter or search term' : 'Register your first driver to begin'}
-          action={!search && !filter && (
+          title={f.q || f.status ? 'No drivers match' : 'No drivers yet'}
+          description={f.q || f.status ? 'Try a different filter or search term' : 'Register your first driver to begin'}
+          action={!f.q && !f.status && (
             <Button icon={UserPlus} onClick={() => nav('/my-drivers/new')}>Register New Driver</Button>
           )}
         />
@@ -288,7 +282,7 @@ export default function MyDriversPage() {
               className="w-full"
               loading={loadingMore}
               icon={ChevronDown}
-              onClick={() => fetchDrivers({ append: true, status: filter, q: search, pg: page + 1 })}
+              onClick={() => fetchDrivers({ append: true, pg: page + 1 })}
             >
               Load more
             </Button>

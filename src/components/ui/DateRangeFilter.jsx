@@ -25,12 +25,24 @@ const startOfMonth = () => { const d = new Date(); d.setDate(1); return d; };
 const startOfLastMonth = () => { const d = new Date(); d.setMonth(d.getMonth() - 1); d.setDate(1); return d; };
 const endOfLastMonth   = () => { const d = new Date(); d.setDate(0); return d; };
 
+const lastNDays = (n) => { const d = new Date(); d.setDate(d.getDate() - (n - 1)); return d; };
+
 const PRESETS = [
   { key: 'today',      label: 'Today',       from: () => today(),          to: () => today() },
   { key: 'yesterday',  label: 'Yesterday',   from: () => yesterday(),      to: () => yesterday() },
   { key: 'this_week',  label: 'This Week',   from: () => startOfWeek(),    to: () => today() },
   { key: 'this_month', label: 'This Month',  from: () => startOfMonth(),   to: () => today() },
   { key: 'last_month', label: 'Last Month',  from: () => startOfLastMonth(), to: () => endOfLastMonth() },
+];
+
+// Rolling windows — what analytics screens want, where "this month" on the 2nd
+// is a useless comparison but "last 30 days" always is one.
+export const ROLLING_PRESETS = [
+  { key: 'today',      label: 'Today',        from: () => today(),        to: () => today() },
+  { key: 'last_7',     label: 'Last 7 days',  from: () => lastNDays(7),   to: () => today() },
+  { key: 'last_30',    label: 'Last 30 days', from: () => lastNDays(30),  to: () => today() },
+  { key: 'last_90',    label: 'Last 90 days', from: () => lastNDays(90),  to: () => today() },
+  { key: 'this_month', label: 'This Month',   from: () => startOfMonth(), to: () => today() },
 ];
 
 const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -40,13 +52,18 @@ const fmtDate = (isoStr) => {
   return `${d} ${MONTHS_SHORT[m - 1]} ${y}`;
 };
 
-function matchPresetKey(from, to) {
+function matchPresetKey(from, to, presets) {
   if (!from && !to) return 'all';
-  for (const p of PRESETS) {
+  for (const p of presets) {
     if (from === iso(p.from()) && to === iso(p.to())) return p.key;
   }
   return 'custom';
 }
+
+const spanDays = (from, to) => {
+  if (!from || !to) return 0;
+  return Math.floor((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86400000) + 1;
+};
 
 // ─── Main component ──────────────────────────────────────────────────────────
 export default function DateRangeFilter({
@@ -57,6 +74,10 @@ export default function DateRangeFilter({
     { value: 'created_at',       label: 'Signup Date' },
     { value: 'last_activity_at', label: 'Last KYC Activity' },
   ],
+  presets = PRESETS,
+  maxDays,              // hard server-side cap (e.g. 92) — block, don't silently truncate
+  allowAll = true,      // false when the endpoint always needs a concrete range
+  label: fieldLabel = 'Date range',
   onChange,
   className = '',
 }) {
@@ -74,8 +95,11 @@ export default function DateRangeFilter({
     return () => document.removeEventListener('mousedown', onDoc);
   }, []);
 
-  const activeKey = matchPresetKey(from, to);
-  const activePreset = PRESETS.find(p => p.key === activeKey);
+  const activeKey = matchPresetKey(from, to, presets);
+  const activePreset = presets.find(p => p.key === activeKey);
+
+  const draftSpan = spanDays(draftFrom, draftTo || draftFrom);
+  const tooLong   = maxDays != null && draftSpan > maxDays;
 
   const applyPreset = (p) => {
     onChange?.({ from: iso(p.from()), to: iso(p.to()), field });
@@ -90,7 +114,7 @@ export default function DateRangeFilter({
   };
 
   const applyCustom = () => {
-    if (!draftFrom) return;
+    if (!draftFrom || tooLong) return;
     onChange?.({ from: draftFrom, to: draftTo || draftFrom, field });
     setCustomOpen(false);
   };
@@ -111,7 +135,7 @@ export default function DateRangeFilter({
   return (
     <div className={className}>
       <label className="block text-[10px] uppercase tracking-wider text-ink-muted font-semibold mb-1">
-        Date range
+        {fieldLabel}
       </label>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -125,7 +149,7 @@ export default function DateRangeFilter({
           >
             <CalIcon size={14} className="text-accent-navy" />
             <span className="text-sm text-ink font-medium">{label}</span>
-            {anySet && (
+            {anySet && allowAll && (
               <span
                 role="button"
                 onClick={(e) => { e.stopPropagation(); clear(); }}
@@ -140,16 +164,18 @@ export default function DateRangeFilter({
 
           {open && (
             <div className="absolute z-40 mt-1 left-0 w-56 bg-white rounded-lg border border-line shadow-pop overflow-hidden">
-              <button
-                type="button"
-                onClick={clear}
-                className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition
-                  ${activeKey === 'all' ? 'bg-brand-100 text-accent-navy font-semibold' : 'text-ink hover:bg-surface-alt'}`}
-              >
-                <span className="flex-1">All dates</span>
-                {activeKey === 'all' && <Check size={13} className="text-accent-navy" />}
-              </button>
-              {PRESETS.map(p => {
+              {allowAll && (
+                <button
+                  type="button"
+                  onClick={clear}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition
+                    ${activeKey === 'all' ? 'bg-brand-100 text-accent-navy font-semibold' : 'text-ink hover:bg-surface-alt'}`}
+                >
+                  <span className="flex-1">All dates</span>
+                  {activeKey === 'all' && <Check size={13} className="text-accent-navy" />}
+                </button>
+              )}
+              {presets.map(p => {
                 const active = activeKey === p.key;
                 return (
                   <button
@@ -179,15 +205,18 @@ export default function DateRangeFilter({
           )}
         </div>
 
-        {/* Field selector — only meaningful if a range is set */}
-        <Select
-          value={field}
-          onChange={(v) => onChange?.({ from, to, field: v })}
-          options={fieldOptions}
-          size="sm"
-          placeholder="Date field"
-          className="min-w-[190px]"
-        />
+        {/* Field selector — only meaningful if a range is set. Endpoints with a
+            single implicit date field pass fieldOptions={[]} to drop it. */}
+        {fieldOptions.length > 0 && (
+          <Select
+            value={field}
+            onChange={(v) => onChange?.({ from, to, field: v })}
+            options={fieldOptions}
+            size="sm"
+            placeholder="Date field"
+            className="min-w-[190px]"
+          />
+        )}
       </div>
 
       {/* Custom range modal */}
@@ -198,16 +227,18 @@ export default function DateRangeFilter({
           title="Choose custom date range"
           footer={
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] text-ink-muted">
-                {draftFrom
-                  ? (draftTo && draftFrom !== draftTo
-                    ? `${fmtDate(draftFrom)} → ${fmtDate(draftTo)}`
-                    : fmtDate(draftFrom))
-                  : 'Pick a start date, then an end date'}
+              <span className={`text-[11px] ${tooLong ? 'text-red-600 font-semibold' : 'text-ink-muted'}`}>
+                {!draftFrom
+                  ? 'Pick a start date, then an end date'
+                  : tooLong
+                    ? `${draftSpan} days selected — max ${maxDays} allowed`
+                    : (draftTo && draftFrom !== draftTo
+                      ? `${fmtDate(draftFrom)} → ${fmtDate(draftTo)} · ${draftSpan} days`
+                      : fmtDate(draftFrom))}
               </span>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setCustomOpen(false)}>Cancel</Button>
-                <Button onClick={applyCustom} disabled={!draftFrom}>Apply</Button>
+                <Button onClick={applyCustom} disabled={!draftFrom || tooLong}>Apply</Button>
               </div>
             </div>
           }

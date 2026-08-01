@@ -2,6 +2,7 @@ import {
   UserCheck, Users, UserPlus, Home, FileText, ListChecks, Shield,
   Search, Settings, LayoutDashboard, ClipboardList, Landmark, Car, IdCard,
   AlertTriangle, CheckCircle2, LogOut, CreditCard, List, Receipt,
+  MapPin, Activity, Gauge, BarChart3,
 } from 'lucide-react';
 
 // Maps backend-provided icon string keys to lucide-react components.
@@ -26,6 +27,11 @@ const map = {
   'credit-card':     CreditCard,
   'list':            List,
   'receipt':         Receipt,
+  'map-pin':         MapPin,
+  'activity':        Activity,
+  'gauge':           Gauge,
+  'bar-chart':       BarChart3,
+  'bar-chart-3':     BarChart3,
 };
 
 export const getIcon = (key) => map[key] || LayoutDashboard;

@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Filter, RefreshCw, ChevronDown, ChevronUp, XCircle, ExternalLink, Bug, Clock,
 } from 'lucide-react';
 import { getApiLogs } from '../../api/opsApi.js';
+import useUrlFilters from '../../utils/useUrlFilters.js';
 import {
   Button, Card, Badge, EmptyState, Spinner, Alert,
   Table, THead, TBody, TH, TR, TD, JsonViewer, Select, SearchBar,
@@ -14,6 +15,10 @@ const KNOWN_MODULES = [
   'sos', 'coupons', 'support', 'notifications', 'tracking', 'zones', 'chat',
   'pricing', 'cities', 'logs',
 ];
+
+// Filters live in the URL — see useUrlFilters. `module`/`path` are committed on
+// Apply, `status` (client-side bucket) applies immediately.
+const DEFAULT_FILTERS = { module: '', path: '', status: '' };
 
 const STATUS_FILTERS = [
   { key: '',      label: 'All' },
@@ -153,9 +158,15 @@ function LogRow({ log, expanded, onToggle }) {
 }
 
 export default function LogsPage() {
-  const [module, setModule] = useState('');
-  const [path,   setPath]   = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [f, setFilter, resetUrlFilters] = useUrlFilters(DEFAULT_FILTERS);
+
+  // Module/path are only committed to the URL on Apply, so the inputs need a draft.
+  const [moduleDraft, setModuleDraft] = useState(f.module);
+  const [pathDraft,   setPathDraft]   = useState(f.path);
+  useEffect(() => { setModuleDraft(f.module); setPathDraft(f.path); }, [f.module, f.path]);
+
+  // Which button triggered the pending refetch — read once by the fetch effect.
+  const originRef = useRef('load');
 
   const [logs, setLogs]           = useState([]);
   const [cursor, setCursor]       = useState(null);
@@ -183,8 +194,8 @@ export default function LogsPage() {
       const res = await getApiLogs({
         type: 1,
         limit: 100,
-        module: opts.module ?? (module || undefined),
-        path:   opts.path   ?? (path   || undefined),
+        module: f.module || undefined,
+        path:   f.path   || undefined,
         beforeCreatedAt: nextCursor || undefined,
       });
       const data = res.data?.data || {};
@@ -203,20 +214,36 @@ export default function LogsPage() {
       setRefreshing(false);
       setLoadingMore(false);
     }
-  }, [module, path]);
+  }, [f.module, f.path]);
 
-  useEffect(() => { fetchPage(null); /* eslint-disable-next-line */ }, []);
+  // Committed filters changed (or first mount) — reload from the top.
+  useEffect(() => {
+    const origin = originRef.current;
+    originRef.current = 'load';
+    fetchPage(null, { origin });
+  }, [fetchPage]);
+
+  const commitFilters = (nextModule, nextPath) => {
+    setExpanded(null);
+    if (nextModule === f.module && nextPath === f.path) {
+      fetchPage(null, { origin: 'apply' });   // nothing changed — just reload
+    } else {
+      originRef.current = 'apply';
+      setFilter({ module: nextModule, path: nextPath });
+    }
+  };
 
   const applyFilters = (e) => {
     e?.preventDefault();
-    setExpanded(null);
-    fetchPage(null, { origin: 'apply' });
+    commitFilters(moduleDraft, pathDraft);
   };
 
   const resetFilters = () => {
-    setModule(''); setPath(''); setStatusFilter('');
     setExpanded(null);
-    fetchPage(null, { origin: 'reset', module: undefined, path: undefined });
+    const refetches = !!(f.module || f.path);   // status filter is client-side
+    if (refetches) originRef.current = 'reset';
+    resetUrlFilters();
+    if (!refetches) fetchPage(null, { origin: 'reset' });
   };
 
   const handleRefresh = () => {
@@ -226,10 +253,10 @@ export default function LogsPage() {
 
   // Client-side status filter
   const visibleLogs = logs.filter(l => {
-    if (!statusFilter) return true;
-    if (statusFilter === 'error') return l.is_error;
+    if (!f.status) return true;
+    if (f.status === 'error') return l.is_error;
     const bucket = Math.floor((l.status_code || 0) / 100);
-    return statusFilter === `${bucket}xx`;
+    return f.status === `${bucket}xx`;
   });
 
   return (
@@ -249,8 +276,8 @@ export default function LogsPage() {
           <div className="sm:col-span-3">
             <Select
               label="Module"
-              value={module}
-              onChange={setModule}
+              value={moduleDraft}
+              onChange={setModuleDraft}
               options={[
                 { value: '', label: 'All modules' },
                 ...KNOWN_MODULES.map(m => ({ value: m, label: m })),
@@ -264,9 +291,9 @@ export default function LogsPage() {
               Path (partial match)
             </label>
             <SearchBar
-              value={path}
-              onChange={setPath}
-              onSubmit={() => fetchPage(null, { origin: 'apply' })}
+              value={pathDraft}
+              onChange={setPathDraft}
+              onSubmit={(v) => commitFilters(moduleDraft, v)}
               placeholder="/verify-signin, /kyc/admin, /ops/me…"
             />
           </div>
@@ -274,9 +301,9 @@ export default function LogsPage() {
           <div className="sm:col-span-3">
             <Select
               label="Status"
-              value={statusFilter}
-              onChange={setStatusFilter}
-              options={STATUS_FILTERS.map(f => ({ value: f.key, label: f.label }))}
+              value={f.status}
+              onChange={(v) => setFilter({ status: v })}
+              options={STATUS_FILTERS.map(opt => ({ value: opt.key, label: opt.label }))}
               placeholder="All statuses"
             />
           </div>

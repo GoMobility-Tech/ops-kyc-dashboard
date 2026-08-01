@@ -4,7 +4,11 @@
       "WebFetch(domain:www.gomobility.co.in)",
       "Bash(curl -sL https://www.gomobility.co.in/ -o /tmp/gomob.html)",
       "Read(//tmp/**)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Bash(node scripts/validate_palette.js \"#062154,#a97c2f,#138808,#1e3a8a\" --mode light --surface \"#fffdf8\")",
+      "Bash(node \"C:/Users/akash/AppData/Local/Temp/claude/D--Akash-Personal-Go-backend-prod-aws-kyc-dashbaord-ops-kyc-dashboard/422c06d4-a1e5-409f-9b55-ff6983399fd6/scratchpad/fixcopy.mjs\")",
+      "Bash(node -e ' *)"
     ]
   }
 }

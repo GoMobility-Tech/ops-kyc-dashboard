@@ -272,6 +272,118 @@ export const deletePassengerDocuments = (userId, { docType, reason } = {}) =>
     ...(reason  ? { data: { reason } }    : {}),
   });
 
+// ─── Driver Metrics (admin module `driver_metrics`) ──────────────────────────
+// Every timestamp comes back as an IST-offset ISO string — never re-convert it.
+// Rate fields can be `null`, which means "no data", NOT zero (see metricsMeta).
+// `from`/`to` are IST calendar dates (YYYY-MM-DD), `to` inclusive, max 92 days.
+const DM = '/admin/driver-metrics';
+
+// Backend rejects a partial bounding box with 400 — send all four or none.
+const bboxParams = (b) =>
+  b && b.swLat != null && b.swLng != null && b.neLat != null && b.neLng != null
+    ? { swLat: b.swLat, swLng: b.swLng, neLat: b.neLat, neLng: b.neLng }
+    : {};
+
+const range = ({ from, to } = {}) => ({
+  ...(from ? { from } : {}),
+  ...(to   ? { to }   : {}),
+});
+
+// includeTest defaults differ per endpoint (false fleet-wide, true per-driver),
+// so only send it when the caller has an opinion.
+const testFlag = (v) => (v == null ? {} : { includeTest: v ? 'true' : 'false' });
+
+// ── Drivers roster — the module's main entry point ───────────────────────────
+// Unlike /leaderboard, this returns EVERY driver: `from`/`to` only scope the
+// `range` block, so a driver with zero activity still comes back with zeroes
+// instead of disappearing.
+// sort: last_seen (default) | online_hours | rides | earnings | acceptance | name | newest
+export const getDriversList = ({
+  search, status, cityId, vehicleType, isVerified,
+  from, to, sort = 'last_seen', includeTest, limit = 50, offset = 0,
+} = {}) =>
+  api.get(`${DM}/drivers`, {
+    params: {
+      ...(search ? { search } : {}),
+      ...(status ? { status } : {}),
+      ...(cityId ? { cityId } : {}),
+      ...(vehicleType ? { vehicleType } : {}),
+      ...(isVerified != null && isVerified !== '' ? { isVerified } : {}),
+      ...range({ from, to }),
+      sort,
+      ...testFlag(includeTest),
+      limit, offset,
+    },
+  });
+
+// Fleet-wide roster counts — independent of the list's filters.
+export const getDriversSummary = ({ includeTest } = {}) =>
+  api.get(`${DM}/drivers/summary`, { params: { ...testFlag(includeTest) } });
+
+export const getLiveMap = ({
+  cityId, vehicleType, status, bbox, includeTest, limit = 2000,
+} = {}) =>
+  api.get(`${DM}/live-map`, {
+    params: {
+      ...(cityId ? { cityId } : {}),
+      ...(vehicleType ? { vehicleType } : {}),
+      ...(status ? { status } : {}),
+      ...bboxParams(bbox),
+      ...testFlag(includeTest),
+      limit,
+    },
+  });
+
+// Fleet-wide totals — deliberately NOT affected by the map's bounding box.
+export const getLiveMapSummary = ({ includeTest } = {}) =>
+  api.get(`${DM}/live-map/summary`, { params: { ...testFlag(includeTest) } });
+
+export const getDriverOverview = (driverId) =>
+  api.get(`${DM}/drivers/${driverId}/overview`);
+
+export const getDriverSessions = (driverId, { from, to, limit = 50, offset = 0 } = {}) =>
+  api.get(`${DM}/drivers/${driverId}/sessions`, { params: { ...range({ from, to }), limit, offset } });
+
+export const getDriverDaily = (driverId, { from, to, includeTest } = {}) =>
+  api.get(`${DM}/drivers/${driverId}/daily`, { params: { ...range({ from, to }), ...testFlag(includeTest) } });
+
+export const getDriverStats = (driverId, { from, to, includeTest } = {}) =>
+  api.get(`${DM}/drivers/${driverId}/stats`, { params: { ...range({ from, to }), ...testFlag(includeTest) } });
+
+export const getDriverTimeline = (driverId, { date, includeTest } = {}) =>
+  api.get(`${DM}/drivers/${driverId}/timeline`, { params: { ...(date ? { date } : {}), ...testFlag(includeTest) } });
+
+export const getDriverLocationHistory = (driverId, { from, to, limit = 5000 } = {}) =>
+  api.get(`${DM}/drivers/${driverId}/location-history`, { params: { ...range({ from, to }), limit } });
+
+export const getDriverBreaks = (driverId, { from, to, limit = 50, offset = 0 } = {}) =>
+  api.get(`${DM}/drivers/${driverId}/breaks`, { params: { ...range({ from, to }), limit, offset } });
+
+// sort: online_hours | rides | earnings | acceptance | sessions
+export const getLeaderboard = ({
+  from, to, sort = 'online_hours', cityId, includeTest, limit = 50, offset = 0,
+} = {}) =>
+  api.get(`${DM}/leaderboard`, {
+    params: {
+      ...range({ from, to }),
+      sort,
+      ...(cityId ? { cityId } : {}),
+      ...testFlag(includeTest),
+      limit, offset,
+    },
+  });
+
+export const getFleetSummary = ({ from, to, includeTest } = {}) =>
+  api.get(`${DM}/fleet-summary`, { params: { ...range({ from, to }), ...testFlag(includeTest) } });
+
+export const getBreakCompliance = ({ from, to, limit = 50, offset = 0 } = {}) =>
+  api.get(`${DM}/break-compliance`, { params: { ...range({ from, to }), limit, offset } });
+
+// Never breaks a running ride — backend defers to ride completion instead.
+// Response: { applied, deferred, reason?, message? }
+export const forceDriverOffline = (driverId, reason) =>
+  api.post(`${DM}/drivers/${driverId}/force-offline`, reason ? { reason } : {});
+
 // ─── API Logs (admin module) ─────────────────────────────────────────────────
 // type=1 → cursor mode (SELECT *, includes response_body, ip, user_agent)
 // omitted / type=0 → offset mode (curated 13 columns)

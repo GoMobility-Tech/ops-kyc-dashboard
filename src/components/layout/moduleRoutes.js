@@ -7,6 +7,7 @@ export const MODULE_ROUTES = {
   payment_orders: '/payment-orders',
   transactions:   '/transactions',
   passenger_kyc:  '/passenger-kyc',
+  driver_metrics: '/driver-metrics',
   logs:           '/logs',
 };
 

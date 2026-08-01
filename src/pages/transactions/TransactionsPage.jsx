@@ -5,11 +5,18 @@ import {
   CheckCircle2, XCircle, Clock, RotateCcw,
 } from 'lucide-react';
 import { getTransactions, getTransactionDetail } from '../../api/opsApi.js';
+import useUrlFilters from '../../utils/useUrlFilters.js';
 import {
   Button, Card, Badge, EmptyState, Spinner, Alert,
   Table, THead, TBody, TH, TR, TD,
   Select, SearchBar, DateRangeFilter, Modal, JsonViewer,
 } from '../../components/ui';
+
+// Filters live in the URL — see useUrlFilters
+const DEFAULT_FILTERS = {
+  type: '', category: '', status: '', method: '', q: '',
+  from: '', to: '', dateField: 'created_at',
+};
 
 const STATUS_META = {
   pending:  { label: 'Pending',  tone: 'info',    icon: Clock },
@@ -179,14 +186,7 @@ function TxDetailModal({ id, onClose }) {
 
 // ─── List page ────────────────────────────────────────────────────────────────
 export default function TransactionsPage() {
-  const [type,     setType]     = useState('');
-  const [category, setCategory] = useState('');
-  const [status,   setStatus]   = useState('');
-  const [method,   setMethod]   = useState('');
-  const [search,   setSearch]   = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo,   setDateTo]   = useState('');
-  const [dateField,setDateField]= useState('created_at');
+  const [f, setFilter] = useUrlFilters(DEFAULT_FILTERS);
 
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
@@ -222,10 +222,11 @@ export default function TransactionsPage() {
     setError('');
     try {
       const res = await getTransactions({
-        type, category, status, method, search,
-        dateFrom: dateFrom || undefined,
-        dateTo:   dateTo   || undefined,
-        dateField,
+        type: f.type, category: f.category, status: f.status,
+        method: f.method, search: f.q,
+        dateFrom: f.from || undefined,
+        dateTo:   f.to   || undefined,
+        dateField: f.dateField,
         page: pg, limit: 20,
       });
       const d = res.data?.data || {};
@@ -238,7 +239,7 @@ export default function TransactionsPage() {
     } finally {
       setInitialLoad(false); setRefreshing(false); setLoadingMore(false);
     }
-  }, [type, category, status, method, search, dateFrom, dateTo, dateField]);
+  }, [f]);
 
   useEffect(() => { load({ pg: 1 }); }, [load]);
 
@@ -263,26 +264,25 @@ export default function TransactionsPage() {
           <div className="flex-1 min-w-[220px]">
             <label className="block text-[10px] uppercase tracking-wider text-ink-muted font-semibold mb-1">Search</label>
             <SearchBar
-              value={search}
-              onChange={setSearch}
-              onSubmit={() => load({ pg: 1 })}
+              value={f.q}
+              onSubmit={(v) => (v === f.q ? load({ pg: 1 }) : setFilter({ q: v }))}
               placeholder="Txn number, gateway id, phone, name, GO ID…"
             />
           </div>
-          <Select label="Type"     value={type}     onChange={setType}     options={TYPE_OPTS}     className="min-w-[140px]" />
-          <Select label="Category" value={category} onChange={setCategory} options={CATEGORY_OPTS} className="min-w-[180px]" />
-          <Select label="Status"   value={status}   onChange={setStatus}   options={STATUS_OPTS}   className="min-w-[140px]" />
-          <Select label="Method"   value={method}   onChange={setMethod}   options={METHOD_OPTS}   className="min-w-[140px]" />
+          <Select label="Type"     value={f.type}     onChange={(v) => setFilter({ type: v })}     options={TYPE_OPTS}     className="min-w-[140px]" />
+          <Select label="Category" value={f.category} onChange={(v) => setFilter({ category: v })} options={CATEGORY_OPTS} className="min-w-[180px]" />
+          <Select label="Status"   value={f.status}   onChange={(v) => setFilter({ status: v })}   options={STATUS_OPTS}   className="min-w-[140px]" />
+          <Select label="Method"   value={f.method}   onChange={(v) => setFilter({ method: v })}   options={METHOD_OPTS}   className="min-w-[140px]" />
         </div>
         <DateRangeFilter
-          from={dateFrom}
-          to={dateTo}
-          field={dateField}
+          from={f.from}
+          to={f.to}
+          field={f.dateField}
           fieldOptions={[
             { value: 'created_at', label: 'Created At' },
             { value: 'updated_at', label: 'Updated At' },
           ]}
-          onChange={({ from, to, field }) => { setDateFrom(from); setDateTo(to); setDateField(field); }}
+          onChange={({ from, to, field }) => setFilter({ from, to, dateField: field })}
         />
       </Card>
 
