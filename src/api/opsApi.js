@@ -240,6 +240,38 @@ export const getTransactions = ({
 export const getTransactionDetail = (id) =>
   api.get(`/admin/transactions-ledger/${id}`);
 
+// ─── Passenger KYC (admin module `passenger_kyc`) ────────────────────────────
+// Record + watchlist screen — no approval workflow. Docs auto-verify on OCR;
+// mismatches raise flags that ops review and (admin only) clear.
+// `flagged` is '1' | '0' | '' (empty = both) — note 0 is meaningful, not "unset".
+export const getPassengerKycList = ({
+  status, flagged, search, page = 1, limit = 20,
+} = {}) =>
+  api.get('/kyc/passenger/admin/list', {
+    params: {
+      ...(status ? { status } : {}),
+      ...(flagged !== '' && flagged != null ? { flagged } : {}),
+      ...(search ? { search } : {}),
+      page, limit,
+    },
+  });
+
+export const getPassengerKycDetail = (userId) =>
+  api.get(`/kyc/passenger/admin/${userId}`);
+
+// admin / super_admin only — ops_team gets 403
+export const clearPassengerFlag = (userId, notes) =>
+  api.post(`/kyc/passenger/admin/${userId}/clear-flag`, notes ? { notes } : {});
+
+// Hard delete — DB rows + S3 objects. All three roles allowed.
+// docType omitted = both. Deleting AADHAAR cascades to SELFIE (face match was
+// scored against that Aadhaar photo, so it can never re-match).
+export const deletePassengerDocuments = (userId, { docType, reason } = {}) =>
+  api.delete(`/kyc/passenger/admin/${userId}/documents`, {
+    ...(docType ? { params: { docType } } : {}),
+    ...(reason  ? { data: { reason } }    : {}),
+  });
+
 // ─── API Logs (admin module) ─────────────────────────────────────────────────
 // type=1 → cursor mode (SELECT *, includes response_body, ip, user_agent)
 // omitted / type=0 → offset mode (curated 13 columns)

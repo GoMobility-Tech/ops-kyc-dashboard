@@ -12,3 +12,4 @@ export { default as Select } from './Select.jsx';
 export { default as SearchBar } from './SearchBar.jsx';
 export { default as DateRangeFilter } from './DateRangeFilter.jsx';
 export { default as Calendar } from './Calendar.jsx';
+export { default as ImageLightbox } from './ImageLightbox.jsx';

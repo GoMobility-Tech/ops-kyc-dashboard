@@ -6,6 +6,7 @@ export const MODULE_ROUTES = {
   all_drivers:    '/all-drivers',
   payment_orders: '/payment-orders',
   transactions:   '/transactions',
+  passenger_kyc:  '/passenger-kyc',
   logs:           '/logs',
 };
 

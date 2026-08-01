@@ -13,6 +13,9 @@ import MyDriversWorkspace   from './pages/my-drivers/WorkspacePage.jsx';
 import AllDriversPage       from './pages/all-drivers/AllDriversPage.jsx';
 import AllDriversDetail     from './pages/all-drivers/DetailPage.jsx';
 
+import PassengerKycPage     from './pages/passenger-kyc/PassengerKycPage.jsx';
+import PassengerKycDetail   from './pages/passenger-kyc/PassengerDetailPage.jsx';
+
 import LogsPage             from './pages/logs/LogsPage.jsx';
 import ReviewQueuePage      from './pages/review-queue/ReviewQueuePage.jsx';
 import PaymentOrdersPage    from './pages/payment-orders/PaymentOrdersPage.jsx';
@@ -54,6 +57,12 @@ export default function App() {
         {/* transactions module */}
         <Route path="/transactions"
           element={<RequireAuth moduleKey="transactions"><TransactionsPage /></RequireAuth>} />
+
+        {/* passenger_kyc module */}
+        <Route path="/passenger-kyc"
+          element={<RequireAuth moduleKey="passenger_kyc"><PassengerKycPage /></RequireAuth>} />
+        <Route path="/passenger-kyc/:userId"
+          element={<RequireAuth moduleKey="passenger_kyc"><PassengerKycDetail /></RequireAuth>} />
 
         {/* logs module */}
         <Route path="/logs"
