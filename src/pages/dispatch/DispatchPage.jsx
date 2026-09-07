@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Radio, ChevronRight, RefreshCw, Phone, Clock, UserX, Pause, Play, MapPin,
+  History,
 } from 'lucide-react';
 import { getPendingDispatch } from '../../api/opsApi.js';
 import {
@@ -179,6 +180,9 @@ export default function DispatchPage() {
           <Button variant="outline" size="sm" icon={RefreshCw} onClick={fetchList}>
             Refresh
           </Button>
+          <Button variant="outline" size="sm" icon={History} onClick={() => nav('/dispatch/history')}>
+            History
+          </Button>
         </div>
       </div>
 
@@ -228,6 +232,12 @@ export default function DispatchPage() {
             live
               ? `The next ride a passenger books will appear here on its own — no need to refresh (checked every ${REFRESH_MS / 1000}s).`
               : 'Auto-refresh is off. Switch "Paused" back to Live, or hit Refresh, to see new requests.'
+          }
+          action={
+            <Button variant="secondary" size="sm" icon={History}
+              onClick={() => nav('/dispatch/history')}>
+              Look up a past ride
+            </Button>
           }
         />
       ) : (

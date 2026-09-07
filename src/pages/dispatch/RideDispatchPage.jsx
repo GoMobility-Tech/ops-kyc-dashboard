@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, RefreshCw, Phone, Clock, UserX, Radio, Waypoints,
-  CheckCircle2, XCircle, CircleSlash, PhoneCall,
+  CheckCircle2, XCircle, CircleSlash, PhoneCall, EyeOff,
 } from 'lucide-react';
 import { getRideDispatch } from '../../api/opsApi.js';
 import {
@@ -51,9 +51,19 @@ export default function RideDispatchPage() {
 
   useEffect(() => { fetchDetail(); }, [fetchDetail]);
 
+  // Derived from `data?` on purpose: `back` renders in the loading and error
+  // branches too, where `data` is still null. Reading a value declared further
+  // down would be a TDZ crash the bundler does not catch.
+  const searching = isSearching(data?.ride?.status);
+
+  // A ride that is still searching came from the live board; anything else was
+  // almost certainly reached from history. Send them back where they were.
+  // While loading we do not know yet — the live board is the safer default.
+  const backTo    = !data || searching ? '/dispatch' : '/dispatch/history';
+  const backLabel = !data || searching ? 'Live requests' : 'Ride history';
   const back = (
-    <Button variant="ghost" size="sm" icon={ArrowLeft} onClick={() => nav('/dispatch')}>
-      Live requests
+    <Button variant="ghost" size="sm" icon={ArrowLeft} onClick={() => nav(backTo)}>
+      {backLabel}
     </Button>
   );
 
@@ -79,7 +89,6 @@ export default function RideDispatchPage() {
   const waiting   = pendingOffers(offers);
   const tel       = telHref(ride.passenger?.phone);
   const noOffers  = (summary?.total ?? 0) === 0;
-  const searching = isSearching(ride.status);
   const tone      = waitTone(ride.waiting_minutes, ride.status);
 
   return (
@@ -204,11 +213,26 @@ export default function RideDispatchPage() {
 
         {noOffers ? (
           <div className="px-4 pb-4">
-            <EmptyState
-              icon={UserX}
-              title="No driver was sent this ride"
-              description="This is not an error. It means no eligible driver was online in that area at the time — a supply problem rather than a dispatch one, and there is nobody here to call."
-            />
+            {/* Two very different reasons for an empty list. Saying "nobody was
+                contacted" about a ride we simply were not recording would send
+                support down the wrong path entirely. */}
+            {data.offers_tracked === false ? (
+              <EmptyState
+                icon={EyeOff}
+                title="Not recorded for this ride"
+                description={
+                  'This ride was requested before per-driver dispatch recording went live'
+                  + (data.tracking_since ? ` on ${fmtTime(data.tracking_since)}` : '')
+                  + ', so we cannot show which drivers were contacted. The dispatch counts below still apply.'
+                }
+              />
+            ) : (
+              <EmptyState
+                icon={UserX}
+                title="No driver was sent this ride"
+                description="This is not an error. It means no eligible driver was online in that area at the time — a supply problem rather than a dispatch one, and there is nobody here to call."
+              />
+            )}
           </div>
         ) : (
           <OfferTimeline offers={offers} />

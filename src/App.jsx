@@ -23,6 +23,7 @@ import FleetAnalyticsPage   from './pages/driver-metrics/FleetAnalyticsPage.jsx'
 
 import DispatchPage         from './pages/dispatch/DispatchPage.jsx';
 import RideDispatchPage     from './pages/dispatch/RideDispatchPage.jsx';
+import DispatchHistoryPage  from './pages/dispatch/HistoryPage.jsx';
 
 import LogsPage             from './pages/logs/LogsPage.jsx';
 import ReviewQueuePage      from './pages/review-queue/ReviewQueuePage.jsx';
@@ -87,6 +88,11 @@ export default function App() {
             support has no ride id to start from */}
         <Route path="/dispatch"
           element={<RequireAuth moduleKey="dispatch_visibility"><DispatchPage /></RequireAuth>} />
+        {/* /history BEFORE /:rideId — otherwise "history" is parsed as a ride
+            id and the page 400s. React Router ranks static segments first, but
+            the order is kept explicit so it survives a refactor. */}
+        <Route path="/dispatch/history"
+          element={<RequireAuth moduleKey="dispatch_visibility"><DispatchHistoryPage /></RequireAuth>} />
         <Route path="/dispatch/:rideId"
           element={<RequireAuth moduleKey="dispatch_visibility"><RideDispatchPage /></RequireAuth>} />
 

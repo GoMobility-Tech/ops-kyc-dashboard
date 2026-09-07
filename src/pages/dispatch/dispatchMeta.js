@@ -164,3 +164,32 @@ export const telHref = (phone) => {
 // Only the drivers who have not responded yet.
 export const pendingOffers = (offers = []) =>
   offers.filter(o => o.outcome === 'pending');
+
+// ── History filters ─────────────────────────────────────────────────────────
+// Ride statuses, from the rides table CHECK constraint.
+export const STATUS_FILTERS = [
+  { value: '',          label: 'Any status' },
+  { value: 'requested', label: 'Still searching' },
+  { value: 'accepted',  label: 'Accepted' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'expired',   label: 'Expired' },
+];
+
+export const DAY_FILTERS = [
+  { value: '1',  label: 'Last 24 hours' },
+  { value: '3',  label: 'Last 3 days' },
+  { value: '10', label: 'Last 10 days' },
+  { value: '30', label: 'Last 30 days' },
+  { value: '90', label: 'Last 90 days' },
+];
+
+export const STATUS_TONE = {
+  requested: 'warning',
+  accepted:  'info',
+  completed: 'success',
+  cancelled: 'danger',
+  expired:   'neutral',
+};
+
+export const statusTone = (s) => STATUS_TONE[s] || 'neutral';

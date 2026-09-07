@@ -419,6 +419,21 @@ export const getApiLogs = ({
 export const getPendingDispatch = ({ limit = 50 } = {}) =>
   api.get('/admin/dispatch/pending', { params: { limit } });
 
+// Past rides, with search. `search` accepts a ride id, a ride number, or a
+// passenger phone — the backend picks the matching indexed lookup from the
+// shape of the input. When `search` is set the day window is ignored, because
+// someone pasting a full ride number should find it however old it is.
+export const getDispatchHistory = ({
+  search, days = 10, status, limit = 50, offset = 0,
+} = {}) =>
+  api.get('/admin/dispatch/history', {
+    params: {
+      ...(search ? { search } : {}),
+      ...(status ? { status } : {}),
+      days, limit, offset,
+    },
+  });
+
 // One ride's full story plus every driver it reached.
 // rideId must be digits only — the backend 400s on "1.5.2" or "1abc".
 export const getRideDispatch = (rideId) =>
