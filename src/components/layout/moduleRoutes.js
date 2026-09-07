@@ -9,6 +9,7 @@ export const MODULE_ROUTES = {
   passenger_kyc:  '/passenger-kyc',
   driver_metrics: '/driver-metrics',
   logs:           '/logs',
+  dispatch_visibility: '/dispatch',
 };
 
 export const routeFor = (moduleKey) => MODULE_ROUTES[moduleKey];

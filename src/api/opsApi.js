@@ -405,3 +405,21 @@ export const getApiLogs = ({
       ...(beforeCreatedAt ? { beforeCreatedAt } : {}),
     },
   });
+
+// ─── Dispatch Visibility (admin module `dispatch_visibility`) ────────────────
+// READ-ONLY. Which drivers a ride request actually reached — name, phone and
+// vehicle — so support can call them and place the ride by hand while supply is
+// still thin. Backend: gomobility-backend/docs/22_DISPATCH_VISIBILITY_FRONTEND.md
+//
+// There is no assign/force endpoint here; the backend does not have one.
+
+// Rides currently searching for a driver — a ride lands here the moment it is
+// requested. Always sorted longest-waiting first by the backend, so the UI must
+// not re-sort. `limit` is clamped to 1..200 server-side.
+export const getPendingDispatch = ({ limit = 50 } = {}) =>
+  api.get('/admin/dispatch/pending', { params: { limit } });
+
+// One ride's full story plus every driver it reached.
+// rideId must be digits only — the backend 400s on "1.5.2" or "1abc".
+export const getRideDispatch = (rideId) =>
+  api.get(`/admin/dispatch/${rideId}`);

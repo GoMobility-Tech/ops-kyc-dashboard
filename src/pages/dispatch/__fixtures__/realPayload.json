@@ -1,0 +1,114 @@
+{
+  "detail": {
+    "ride": {
+      "id": 845,
+      "ride_number": "RIDE-MTQAFP05PYRS",
+      "status": "requested",
+      "vehicle_type": "auto",
+      "pickup_address": "62H, Noble Enclave, Palam Vihar Extension, Gurugram, Haryana 122015, India",
+      "dropoff_address": "AMBIENCE MALL, GURUGRAM, Ambience Island, DLF Phase 3, Sector 24, Gurugram, Haryana, India",
+      "pickup_location": {
+        "latitude": "28.49936180",
+        "longitude": "77.06284170"
+      },
+      "estimated_fare": "147.10",
+      "requested_at": "2026-09-07T10:43:39.613+05:30",
+      "waiting_minutes": -501,
+      "passenger": {
+        "name": "Test Rider",
+        "phone": "9999900000"
+      }
+    },
+    "dispatch": {
+      "attempts": 1,
+      "current_radius_km": "5.00",
+      "final_radius_km": "5.00",
+      "drivers_notified_total": 1,
+      "match_source": "haversine_only",
+      "first_broadcast_at": "2026-09-07T02:22:26.846+05:30",
+      "matched_at": "2026-09-07T02:22:31.967+05:30"
+    },
+    "summary": {
+      "total": 3,
+      "pending": 2,
+      "accepted": 0,
+      "rejected": 1,
+      "expired": 0
+    },
+    "offers": [
+      {
+        "driver": {
+          "id": 1,
+          "name": "Ramesh Kumar",
+          "phone": "9876500001",
+          "vehicle_type": "bike",
+          "vehicle_number": "HR26AB1234",
+          "vehicle_model": "MAESTRO EDGE (CAST WHEEL)"
+        },
+        "source": "initial",
+        "tier": 0,
+        "radius_km": "5.00",
+        "distance_km": "1.20",
+        "notified_at": "2026-09-07T10:50:39.613+05:30",
+        "outcome": "pending",
+        "outcome_at": null
+      },
+      {
+        "driver": {
+          "id": 6,
+          "name": "Suresh Yadav",
+          "phone": "9876500002",
+          "vehicle_type": "car",
+          "vehicle_number": "HR26CD5678",
+          "vehicle_model": "Maruti Swift"
+        },
+        "source": "late_online",
+        "tier": null,
+        "radius_km": null,
+        "distance_km": null,
+        "notified_at": "2026-09-07T10:50:39.613+05:30",
+        "outcome": "pending",
+        "outcome_at": null
+      },
+      {
+        "driver": {
+          "id": 4,
+          "name": "Mahesh Singh",
+          "phone": "9876500003",
+          "vehicle_type": "car",
+          "vehicle_number": "HR26EF9012",
+          "vehicle_model": "Maruti Swift Dzire"
+        },
+        "source": "tier_expansion",
+        "tier": 2,
+        "radius_km": "8.00",
+        "distance_km": "6.40",
+        "notified_at": "2026-09-07T10:50:39.613+05:30",
+        "outcome": "rejected",
+        "outcome_at": "2026-09-07T10:50:39.613+05:30"
+      }
+    ]
+  },
+  "pending": {
+    "rides": [
+      {
+        "ride_id": 845,
+        "ride_number": "RIDE-MTQAFP05PYRS",
+        "status": "requested",
+        "vehicle_type": "auto",
+        "pickup_address": "62H, Noble Enclave, Palam Vihar Extension, Gurugram, Haryana 122015, India",
+        "dropoff_address": "AMBIENCE MALL, GURUGRAM, Ambience Island, DLF Phase 3, Sector 24, Gurugram, Haryana, India",
+        "estimated_fare": "147.10",
+        "requested_at": "2026-09-07T10:43:39.613+05:30",
+        "waiting_minutes": 7,
+        "passenger_name": "Test Rider",
+        "passenger_phone": "9999900000",
+        "drivers_notified": 1,
+        "dispatch_attempts": 1,
+        "current_search_radius_km": "5.00",
+        "offers_recorded": 3
+      }
+    ],
+    "count": 1
+  }
+}

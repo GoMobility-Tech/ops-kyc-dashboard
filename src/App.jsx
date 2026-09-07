@@ -21,6 +21,9 @@ import LiveMapPage          from './pages/driver-metrics/LiveMapPage.jsx';
 import DriverMetricsDetail  from './pages/driver-metrics/DriverDetailPage.jsx';
 import FleetAnalyticsPage   from './pages/driver-metrics/FleetAnalyticsPage.jsx';
 
+import DispatchPage         from './pages/dispatch/DispatchPage.jsx';
+import RideDispatchPage     from './pages/dispatch/RideDispatchPage.jsx';
+
 import LogsPage             from './pages/logs/LogsPage.jsx';
 import ReviewQueuePage      from './pages/review-queue/ReviewQueuePage.jsx';
 import PaymentOrdersPage    from './pages/payment-orders/PaymentOrdersPage.jsx';
@@ -79,6 +82,13 @@ export default function App() {
           element={<RequireAuth moduleKey="driver_metrics"><FleetAnalyticsPage /></RequireAuth>} />
         <Route path="/driver-metrics/drivers/:driverId"
           element={<RequireAuth moduleKey="driver_metrics"><DriverMetricsDetail /></RequireAuth>} />
+
+        {/* dispatch_visibility module — pending list is the entry point;
+            support has no ride id to start from */}
+        <Route path="/dispatch"
+          element={<RequireAuth moduleKey="dispatch_visibility"><DispatchPage /></RequireAuth>} />
+        <Route path="/dispatch/:rideId"
+          element={<RequireAuth moduleKey="dispatch_visibility"><RideDispatchPage /></RequireAuth>} />
 
         {/* logs module */}
         <Route path="/logs"
