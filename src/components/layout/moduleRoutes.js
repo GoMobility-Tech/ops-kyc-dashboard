@@ -11,6 +11,7 @@ export const MODULE_ROUTES = {
   logs:           '/logs',
   dispatch_visibility: '/dispatch',
   pricing_settings: '/pricing-settings',
+  data_exports:     '/exports',
 };
 
 export const routeFor = (moduleKey) => MODULE_ROUTES[moduleKey];

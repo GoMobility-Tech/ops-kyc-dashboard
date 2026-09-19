@@ -26,6 +26,7 @@ import RideDispatchPage     from './pages/dispatch/RideDispatchPage.jsx';
 import DispatchHistoryPage  from './pages/dispatch/HistoryPage.jsx';
 
 import PricingSettingsPage  from './pages/pricing-settings/PricingSettingsPage.jsx';
+import ExportsPage         from './pages/exports/ExportsPage.jsx';
 
 import LogsPage             from './pages/logs/LogsPage.jsx';
 import ReviewQueuePage      from './pages/review-queue/ReviewQueuePage.jsx';
@@ -103,6 +104,10 @@ export default function App() {
             than folded into an existing one. */}
         <Route path="/pricing-settings"
           element={<RequireAuth moduleKey="pricing_settings"><PricingSettingsPage /></RequireAuth>} />
+
+        {/* data_exports module — filtered Excel pulls of passenger/driver data */}
+        <Route path="/exports"
+          element={<RequireAuth moduleKey="data_exports"><ExportsPage /></RequireAuth>} />
 
         {/* logs module */}
         <Route path="/logs"
