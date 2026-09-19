@@ -438,3 +438,86 @@ export const getDispatchHistory = ({
 // rideId must be digits only — the backend 400s on "1.5.2" or "1abc".
 export const getRideDispatch = (rideId) =>
   api.get(`/admin/dispatch/${rideId}`);
+
+// ─── Pricing Settings (admin module `pricing_settings`) ──────────────────────
+// Everything here writes to LIVE pricing. A change takes effect on the next
+// fare quote and is recorded in pricing_config_audit with the editor's email.
+//
+// Every write response carries a `cache` object:
+//   { applied_here, all_servers, broadcast, servers_notified, note }
+// When `all_servers` is false the change is saved and live on the server that
+// answered, but the others could not be told (Redis down or unreachable) —
+// the UI shows the note and points at Reload Cache.
+// Backend: gomobility-backend/src/modules/pricing/routes/pricingAdminRoutes.js
+
+const PRICING = '/admin/pricing';
+
+// Every vehicle row including switched-off ones, plus `availableToAdd` —
+// vehicle types the app knows but which have no pricing row yet.
+export const getPricingVehicles = () =>
+  api.get(`${PRICING}/vehicles`);
+
+// Partial update. Send only the fields that changed; unknown field names are
+// rejected with 400 rather than silently ignored.
+export const updatePricingVehicle = (vehicleType, patch) =>
+  api.patch(`${PRICING}/vehicles/${vehicleType}`, patch);
+
+// Set up a vehicle type that has no pricing row yet. display_name,
+// vehicle_class, base_fare, per_km_rate and minimum_fare are required.
+export const createPricingVehicle = (payload) =>
+  api.post(`${PRICING}/vehicles`, payload);
+
+// The field catalog: label, group, type, unit, safe range and help text for
+// every editable setting. The settings form is rendered from this, so a new
+// backend setting needs no frontend release.
+export const getPricingSettingsMeta = () =>
+  api.get(`${PRICING}/settings/meta`);
+
+// Raw pricing_settings rows, each with its catalog entry as `meta` (null for
+// engineer-only keys, which are shown read-only).
+export const getPricingSettings = () =>
+  api.get(`${PRICING}/settings`);
+
+export const updatePricingSetting = (key, value, valueType) =>
+  api.patch(`${PRICING}/settings/${key}`, {
+    value,
+    ...(valueType ? { value_type: valueType } : {}),
+  });
+
+export const getPricingGst = () => api.get(`${PRICING}/gst`);
+export const updatePricingGst = (patch) => api.patch(`${PRICING}/gst`, patch);
+
+export const getPricingTiers = () => api.get(`${PRICING}/tiers`);
+export const savePricingTier = (tierName, patch) =>
+  api.put(`${PRICING}/tiers/${tierName}`, patch);
+
+export const getPricingSubscribers = () => api.get(`${PRICING}/subscribers`);
+export const updatePricingSubscriber = (tierName, patch) =>
+  api.patch(`${PRICING}/subscribers/${tierName}`, patch);
+
+export const getPricingPenalties = () => api.get(`${PRICING}/penalties`);
+export const savePricingPenalty = (offenseType, offenseCount, patch) =>
+  api.put(`${PRICING}/penalties/${offenseType}/${offenseCount}`, patch);
+export const deletePricingPenalty = (offenseType, offenseCount) =>
+  api.delete(`${PRICING}/penalties/${offenseType}/${offenseCount}`);
+
+// Who changed what, newest first. `scope` is one of vehicle | tier |
+// subscriber | gst | penalty | setting.
+export const getPricingAudit = ({ scope, target, limit = 100, offset = 0 } = {}) =>
+  api.get(`${PRICING}/audit`, {
+    params: {
+      ...(scope ? { scope } : {}),
+      ...(target ? { target } : {}),
+      limit, offset,
+    },
+  });
+
+// Reloads the answering server and re-broadcasts to the rest. Needed when a
+// value was changed directly in the database, or when a save came back warning
+// that the broadcast could not be confirmed.
+export const reloadPricingCache = () => api.post(`${PRICING}/cache/reload`);
+
+// What the answering server currently holds in memory — the fare engine reads
+// exactly this. With several servers behind the load balancer, two calls can
+// land on different ones; `servedBy` says which answered.
+export const getPricingCacheSnapshot = () => api.get(`${PRICING}/cache`);
