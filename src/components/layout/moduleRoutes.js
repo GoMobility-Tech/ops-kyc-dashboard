@@ -10,6 +10,7 @@ export const MODULE_ROUTES = {
   driver_metrics: '/driver-metrics',
   logs:           '/logs',
   dispatch_visibility: '/dispatch',
+  pricing_settings: '/pricing-settings',
 };
 
 export const routeFor = (moduleKey) => MODULE_ROUTES[moduleKey];

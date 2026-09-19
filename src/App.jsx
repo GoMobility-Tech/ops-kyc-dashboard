@@ -25,6 +25,8 @@ import DispatchPage         from './pages/dispatch/DispatchPage.jsx';
 import RideDispatchPage     from './pages/dispatch/RideDispatchPage.jsx';
 import DispatchHistoryPage  from './pages/dispatch/HistoryPage.jsx';
 
+import PricingSettingsPage  from './pages/pricing-settings/PricingSettingsPage.jsx';
+
 import LogsPage             from './pages/logs/LogsPage.jsx';
 import ReviewQueuePage      from './pages/review-queue/ReviewQueuePage.jsx';
 import PaymentOrdersPage    from './pages/payment-orders/PaymentOrdersPage.jsx';
@@ -95,6 +97,12 @@ export default function App() {
           element={<RequireAuth moduleKey="dispatch_visibility"><DispatchHistoryPage /></RequireAuth>} />
         <Route path="/dispatch/:rideId"
           element={<RequireAuth moduleKey="dispatch_visibility"><RideDispatchPage /></RequireAuth>} />
+
+        {/* pricing_settings module — one screen, tabs inside. Everything it
+            writes is live pricing, so it is gated on its own module key rather
+            than folded into an existing one. */}
+        <Route path="/pricing-settings"
+          element={<RequireAuth moduleKey="pricing_settings"><PricingSettingsPage /></RequireAuth>} />
 
         {/* logs module */}
         <Route path="/logs"
