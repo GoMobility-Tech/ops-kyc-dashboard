@@ -58,20 +58,22 @@ const entry = `
     ['FilterPanel — passengers, real catalog', () => {
       const html = render(FilterPanel, {
         dataset: passengers, draft: {}, onChange: noop, onClear: noop, catalog,
+        preview: null, busy: '', onCount: noop, onBuild: noop,
       });
       const t = text(html);
-      must(/28 filters/.test(t), 'filter count missing');
-      must(/27 columns/.test(t), 'column count missing');
-      // Pehla group khula, baaki band — warna jobs table screen se neeche
-      must(/IDENTITY/i.test(t), 'first group is not open');
+      must(/none of 28/.test(t), 'the applied-count summary is missing');
+      must(/Count rows/.test(t) && /Build Excel/.test(t), 'actions are not in the toolbar');
+      // Pehla section khula, baaki band — warna jobs table screen se neeche
+      must(/Identity/i.test(t), 'first section is not open');
       return html;
     }],
 
     ['FilterPanel — drivers', () => {
       const html = render(FilterPanel, {
         dataset: drivers, draft: {}, onChange: noop, onClear: noop, catalog,
+        preview: null, busy: '', onCount: noop, onBuild: noop,
       });
-      must(/31 filters/.test(text(html)), 'driver filter count wrong');
+      must(/none of 31/.test(text(html)), 'driver filter count wrong');
       return html;
     }],
 
@@ -84,6 +86,18 @@ const entry = `
       // Band dropdown me "Yes" aur "No" dikhne hi nahi chahiye
       must(!/\\bYes\\b/.test(t) && !/\\bNo\\b/.test(t),
         'Yes/No are on screen — this is still the chip layout');
+      return html;
+    }],
+
+    ['filter lagane ke liye kahin chips nahi hain', () => {
+      // Ye poore redesign ki shart hai. Pehla version har boolean ko teen
+      // chips me aur har group ko chips ki line me dikhata tha.
+      const html = render(FilterPanel, {
+        dataset: passengers, draft: {}, onChange: noop, onClear: noop, catalog,
+        preview: null, busy: '', onCount: noop, onBuild: noop,
+      });
+      must(!/rounded-full/.test(html),
+        'a pill/chip control is still being rendered in the filter panel');
       return html;
     }],
 

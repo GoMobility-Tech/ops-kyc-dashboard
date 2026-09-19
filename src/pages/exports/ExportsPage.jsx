@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Play, Calculator, CheckCircle2 } from 'lucide-react';
-import { Card, Alert, Spinner, Select, Button } from '../../components/ui';
+import { CheckCircle2 } from 'lucide-react';
+import { Alert, Spinner, Select } from '../../components/ui';
 import { getExportCatalog, listExports, previewExport, createExport } from '../../api/opsApi.js';
 import FilterPanel from './FilterPanel.jsx';
 import JobsTable    from './JobsTable.jsx';
-import { cleanFilters, countFilters, fmtCount } from './exportMeta.js';
+import { cleanFilters } from './exportMeta.js';
 
 // ─── Data Exports ───────────────────────────────────────────────────────────
 //
@@ -42,7 +42,6 @@ export default function ExportsPage() {
     () => datasets.find(d => d.key === datasetKey) || null,
     [datasets, datasetKey],
   );
-  const applied = countFilters(draft);
 
   // ── Catalog ──
   useEffect(() => {
@@ -177,45 +176,11 @@ export default function ExportsPage() {
             onChange={setFilter}
             onClear={() => { setDraft({}); setPreview(null); }}
             catalog={catalog}
+            preview={preview}
+            busy={busy}
+            onCount={runPreview}
+            onBuild={submit}
           />
-
-          {/* Action bar — filters aur table ke beech, dono ke saath dikhta hai */}
-          <Card className="sticky bottom-3 z-20 shadow-pop">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="min-w-0">
-                {preview ? (
-                  <p className="text-sm">
-                    <strong className="text-accent-navy tabular-nums">{fmtCount(preview.rowCount)}</strong>
-                    <span className="text-ink-muted"> rows match</span>
-                    {preview.rowCount === 0 && <span className="text-red-600"> — nothing to export</span>}
-                  </p>
-                ) : (
-                  <p className="text-xs text-ink-muted">
-                    {applied === 0
-                      ? 'No filters — this exports the whole dataset.'
-                      : `${applied} filter${applied === 1 ? '' : 's'} applied.`}
-                  </p>
-                )}
-                {preview?.filterSummary?.length > 0 && (
-                  <p className="text-[11px] text-ink-faint mt-1 leading-relaxed">
-                    {preview.filterSummary.join(' · ')}
-                  </p>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" icon={Calculator}
-                        loading={busy === 'preview'} onClick={runPreview}>
-                  Count rows
-                </Button>
-                <Button variant="primary" size="sm" icon={Play}
-                        loading={busy === 'create'}
-                        disabled={preview?.rowCount === 0}
-                        onClick={submit}>
-                  Build Excel
-                </Button>
-              </div>
-            </div>
-          </Card>
 
           <JobsTable
             rows={rows}
