@@ -521,3 +521,47 @@ export const reloadPricingCache = () => api.post(`${PRICING}/cache/reload`);
 // exactly this. With several servers behind the load balancer, two calls can
 // land on different ones; `servedBy` says which answered.
 export const getPricingCacheSnapshot = () => api.get(`${PRICING}/cache`);
+
+// ─── Data Exports (admin module `data_exports`) ──────────────────────────────
+// Passenger/driver data ka filtered Excel. Request karo → worker file banata
+// hai → S3 se download. File expire nahi hoti; jab chaaho utaaro.
+//
+// Filters yahan HARDCODED NAHI hain. `getExportCatalog()` har dataset ke
+// filters, unke type, options aur city groups deta hai, aur form usi se banta
+// hai — bilkul waise jaise Pricing Settings apna form `/settings/meta` se
+// banata hai. Backend me naya filter jodne pe frontend release nahi chahiye.
+//
+// Backend: gomobility-backend/src/modules/exports/routes/exportRoutes.js
+
+const EXPORTS = '/admin/exports';
+
+// Har dataset ke filter groups + columns, aur city groups (NCR, Tricity,
+// enabled cities). Form isi se render hota hai.
+export const getExportCatalog = () => api.get(`${EXPORTS}/catalog`);
+
+// File banaye bina row count — "ye filter kitna data dega" ka jawab.
+// Wahi query chalti hai jo export chalayega, to number sach hota hai.
+export const previewExport = (dataset, filters) =>
+  api.post(`${EXPORTS}/preview`, { dataset, filters });
+
+// Job queue karo. 202 = naya job, 200 = pichhle 10 min ka wahi request dobara
+// (double-press guard — backend nayi file nahi banata).
+export const createExport = (dataset, filters) =>
+  api.post(EXPORTS, { dataset, filters });
+
+export const listExports = ({ dataset, status, mine, limit = 20, offset = 0 } = {}) =>
+  api.get(EXPORTS, {
+    params: {
+      ...(dataset ? { dataset } : {}),
+      ...(status ? { status } : {}),
+      ...(mine ? { mine: 'true' } : {}),
+      limit, offset,
+    },
+  });
+
+export const getExportJob = (id) => api.get(`${EXPORTS}/${id}`);
+
+// File nahi, JSON lautata hai: { url, fileName, downloadCount, … }.
+// `url` S3 ka signed link hai (15 min). Har call download_count badhata hai,
+// isliye ise sirf tab call karo jab user ne sach me download press kiya ho.
+export const getExportDownloadUrl = (id) => api.get(`${EXPORTS}/${id}/download`);
