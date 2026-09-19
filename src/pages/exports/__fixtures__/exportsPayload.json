@@ -1,0 +1,4127 @@
+{
+ "catalog": {
+  "datasets": [
+   {
+    "key": "passengers",
+    "label": "Passengers",
+    "description": "Passenger master with city, KYC, wallet, subscription and ride history.",
+    "filterCount": 28,
+    "columnCount": 27,
+    "filterGroups": [
+     {
+      "label": "Identity",
+      "filters": [
+       {
+        "key": "search",
+        "label": "Name, phone, email or GO ID",
+        "type": "text",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "language",
+        "label": "App language",
+        "type": "multiselect",
+        "options": [
+         {
+          "value": "en",
+          "label": "English"
+         },
+         {
+          "value": "hi",
+          "label": "Hindi"
+         }
+        ],
+        "unit": null,
+        "help": null
+       }
+      ]
+     },
+     {
+      "label": "Location",
+      "filters": [
+       {
+        "key": "city",
+        "label": "Signup city",
+        "type": "city",
+        "options": null,
+        "unit": null,
+        "help": "Pick city groups, individual cities, or both together."
+       },
+       {
+        "key": "last_login_city",
+        "label": "Last login city",
+        "type": "city",
+        "options": null,
+        "unit": null,
+        "help": null
+       }
+      ]
+     },
+     {
+      "label": "Account",
+      "filters": [
+       {
+        "key": "is_active",
+        "label": "Active account",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "is_verified",
+        "label": "Phone verified",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "is_suspended",
+        "label": "Suspended",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "is_test_user",
+        "label": "Test account",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": "Leave blank to exclude nothing; set No to drop internal test accounts."
+       },
+       {
+        "key": "is_logged",
+        "label": "Currently logged in",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "has_google",
+        "label": "Signed up with Google",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "registered_by_ops",
+        "label": "Registered by ops",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       }
+      ]
+     },
+     {
+      "label": "KYC",
+      "filters": [
+       {
+        "key": "kyc_status",
+        "label": "KYC status",
+        "type": "multiselect",
+        "options": [
+         {
+          "value": "in_progress",
+          "label": "In progress"
+         },
+         {
+          "value": "verified",
+          "label": "Verified"
+         }
+        ],
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "kyc_done",
+        "label": "Has KYC record",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "kyc_flagged",
+        "label": "KYC flagged",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "kyc_consent",
+        "label": "Consent given",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       }
+      ]
+     },
+     {
+      "label": "Money",
+      "filters": [
+       {
+        "key": "wallet_balance",
+        "label": "Wallet balance",
+        "type": "number_range",
+        "options": null,
+        "unit": "₹",
+        "help": null
+       },
+       {
+        "key": "has_pending_dues",
+        "label": "Has pending dues",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "pending_dues",
+        "label": "Pending dues amount",
+        "type": "number_range",
+        "options": null,
+        "unit": "₹",
+        "help": null
+       },
+       {
+        "key": "is_payment_defaulter",
+        "label": "Payment defaulter",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "total_spend",
+        "label": "Lifetime spend",
+        "type": "number_range",
+        "options": null,
+        "unit": "₹",
+        "help": null
+       }
+      ]
+     },
+     {
+      "label": "Subscription",
+      "filters": [
+       {
+        "key": "is_subscribed",
+        "label": "Has active GO Pass",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       }
+      ]
+     },
+     {
+      "label": "Rides",
+      "filters": [
+       {
+        "key": "completed_rides",
+        "label": "Completed rides",
+        "type": "number_range",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "total_rides",
+        "label": "Total ride requests",
+        "type": "number_range",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "cancelled_rides",
+        "label": "Cancelled rides",
+        "type": "number_range",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "never_rode",
+        "label": "Never completed a ride",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "last_ride_at",
+        "label": "Last ride date",
+        "type": "date_range",
+        "options": null,
+        "unit": null,
+        "help": null
+       }
+      ]
+     },
+     {
+      "label": "Dates",
+      "filters": [
+       {
+        "key": "created_at",
+        "label": "Signed up",
+        "type": "date_range",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "last_login_at",
+        "label": "Last login",
+        "type": "date_range",
+        "options": null,
+        "unit": null,
+        "help": null
+       }
+      ]
+     }
+    ],
+    "columns": [
+     {
+      "key": "go_id",
+      "header": "GO ID"
+     },
+     {
+      "key": "full_name",
+      "header": "Name"
+     },
+     {
+      "key": "phone_number",
+      "header": "Phone"
+     },
+     {
+      "key": "email",
+      "header": "Email"
+     },
+     {
+      "key": "signup_city",
+      "header": "Signup city"
+     },
+     {
+      "key": "signup_state",
+      "header": "State"
+     },
+     {
+      "key": "last_login_city",
+      "header": "Last login city"
+     },
+     {
+      "key": "language",
+      "header": "Language"
+     },
+     {
+      "key": "is_active",
+      "header": "Active"
+     },
+     {
+      "key": "is_verified",
+      "header": "Phone verified"
+     },
+     {
+      "key": "is_suspended",
+      "header": "Suspended"
+     },
+     {
+      "key": "is_test_user",
+      "header": "Test account"
+     },
+     {
+      "key": "kyc_status",
+      "header": "KYC status"
+     },
+     {
+      "key": "kyc_flagged",
+      "header": "KYC flagged"
+     },
+     {
+      "key": "kyc_verified_at",
+      "header": "KYC verified on"
+     },
+     {
+      "key": "wallet_balance",
+      "header": "Wallet balance"
+     },
+     {
+      "key": "has_pending_dues",
+      "header": "Pending dues"
+     },
+     {
+      "key": "pending_dues_amount",
+      "header": "Dues amount"
+     },
+     {
+      "key": "is_subscribed",
+      "header": "GO Pass"
+     },
+     {
+      "key": "total_rides",
+      "header": "Ride requests"
+     },
+     {
+      "key": "completed_rides",
+      "header": "Completed"
+     },
+     {
+      "key": "cancelled_rides",
+      "header": "Cancelled"
+     },
+     {
+      "key": "total_spend",
+      "header": "Lifetime spend"
+     },
+     {
+      "key": "first_ride_at",
+      "header": "First ride"
+     },
+     {
+      "key": "last_ride_at",
+      "header": "Last ride"
+     },
+     {
+      "key": "created_at",
+      "header": "Signed up"
+     },
+     {
+      "key": "last_login_at",
+      "header": "Last login"
+     }
+    ]
+   },
+   {
+    "key": "drivers",
+    "label": "Drivers",
+    "description": "Driver master with city, vehicle, KYC, duty state, earnings and ride history.",
+    "filterCount": 31,
+    "columnCount": 32,
+    "filterGroups": [
+     {
+      "label": "Identity",
+      "filters": [
+       {
+        "key": "search",
+        "label": "Name, phone, email or GO ID",
+        "type": "text",
+        "options": null,
+        "unit": null,
+        "help": null
+       }
+      ]
+     },
+     {
+      "label": "Location",
+      "filters": [
+       {
+        "key": "city",
+        "label": "Current city",
+        "type": "city",
+        "options": null,
+        "unit": null,
+        "help": "Pick city groups, individual cities, or both together."
+       },
+       {
+        "key": "signup_city",
+        "label": "Signup city",
+        "type": "city",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "last_login_city",
+        "label": "Last login city",
+        "type": "city",
+        "options": null,
+        "unit": null,
+        "help": null
+       }
+      ]
+     },
+     {
+      "label": "Vehicle",
+      "filters": [
+       {
+        "key": "vehicle_type",
+        "label": "Vehicle type",
+        "type": "multiselect",
+        "options": [
+         {
+          "value": "bike",
+          "label": "Bike"
+         },
+         {
+          "value": "auto",
+          "label": "Auto"
+         },
+         {
+          "value": "car",
+          "label": "Car"
+         },
+         {
+          "value": "xl",
+          "label": "XL"
+         },
+         {
+          "value": "premium",
+          "label": "Premium"
+         },
+         {
+          "value": "luxury",
+          "label": "Luxury"
+         }
+        ],
+        "unit": null,
+        "help": "A driver can be approved for several types; this matches any of them."
+       },
+       {
+        "key": "vehicle_verification",
+        "label": "Vehicle verification",
+        "type": "multiselect",
+        "options": [
+         {
+          "value": "pending",
+          "label": "Pending"
+         },
+         {
+          "value": "verified",
+          "label": "Verified"
+         },
+         {
+          "value": "rejected",
+          "label": "Rejected"
+         }
+        ],
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "fuel_type",
+        "label": "Fuel type",
+        "type": "text",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "is_commercial",
+        "label": "Commercial RC",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "vahan_verified",
+        "label": "VAHAN verified",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "rc_expiry",
+        "label": "RC expiry",
+        "type": "date_range",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "insurance_valid_until",
+        "label": "Insurance valid until",
+        "type": "date_range",
+        "options": null,
+        "unit": null,
+        "help": null
+       }
+      ]
+     },
+     {
+      "label": "KYC",
+      "filters": [
+       {
+        "key": "kyc_status",
+        "label": "KYC status",
+        "type": "multiselect",
+        "options": [
+         {
+          "value": "approved",
+          "label": "Approved"
+         },
+         {
+          "value": "in_progress",
+          "label": "In progress"
+         },
+         {
+          "value": "pending_review",
+          "label": "Pending review"
+         },
+         {
+          "value": "rejected",
+          "label": "Rejected"
+         },
+         {
+          "value": "suspended",
+          "label": "Suspended"
+         },
+         {
+          "value": "verified",
+          "label": "Verified"
+         }
+        ],
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "docs_verified",
+        "label": "Verified documents",
+        "type": "number_range",
+        "options": null,
+        "unit": null,
+        "help": null
+       }
+      ]
+     },
+     {
+      "label": "Status",
+      "filters": [
+       {
+        "key": "is_verified",
+        "label": "Driver verified",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "is_available",
+        "label": "Available",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "is_on_duty",
+        "label": "On duty",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "is_active",
+        "label": "Active account",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "is_suspended",
+        "label": "Suspended",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "is_test_user",
+        "label": "Test account",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "pending_force_offline",
+        "label": "Pending force-offline",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "never_pinged",
+        "label": "Never reached by dispatch",
+        "type": "boolean",
+        "options": null,
+        "unit": null,
+        "help": "Drivers who have never been sent a ride offer."
+       }
+      ]
+     },
+     {
+      "label": "Performance",
+      "filters": [
+       {
+        "key": "rating",
+        "label": "Rating",
+        "type": "number_range",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "completed_rides",
+        "label": "Completed rides",
+        "type": "number_range",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "lifetime_earnings",
+        "label": "Lifetime earnings",
+        "type": "number_range",
+        "options": null,
+        "unit": "₹",
+        "help": null
+       },
+       {
+        "key": "last_ride_at",
+        "label": "Last ride date",
+        "type": "date_range",
+        "options": null,
+        "unit": null,
+        "help": null
+       }
+      ]
+     },
+     {
+      "label": "Money",
+      "filters": [
+       {
+        "key": "wallet_balance",
+        "label": "Wallet balance",
+        "type": "number_range",
+        "options": null,
+        "unit": "₹",
+        "help": null
+       },
+       {
+        "key": "subscription_status",
+        "label": "Driver subscription",
+        "type": "multiselect",
+        "options": [
+         {
+          "value": "active",
+          "label": "Active"
+         },
+         {
+          "value": "inactive",
+          "label": "Inactive"
+         },
+         {
+          "value": "expired",
+          "label": "Expired"
+         }
+        ],
+        "unit": null,
+        "help": null
+       }
+      ]
+     },
+     {
+      "label": "Dates",
+      "filters": [
+       {
+        "key": "created_at",
+        "label": "Joined",
+        "type": "date_range",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "verified_at",
+        "label": "Verified on",
+        "type": "date_range",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "last_login_at",
+        "label": "Last login",
+        "type": "date_range",
+        "options": null,
+        "unit": null,
+        "help": null
+       },
+       {
+        "key": "last_ping_at",
+        "label": "Last GPS ping",
+        "type": "date_range",
+        "options": null,
+        "unit": null,
+        "help": null
+       }
+      ]
+     }
+    ],
+    "columns": [
+     {
+      "key": "go_id",
+      "header": "GO ID"
+     },
+     {
+      "key": "full_name",
+      "header": "Name"
+     },
+     {
+      "key": "phone_number",
+      "header": "Phone"
+     },
+     {
+      "key": "email",
+      "header": "Email"
+     },
+     {
+      "key": "current_city",
+      "header": "Current city"
+     },
+     {
+      "key": "current_state",
+      "header": "State"
+     },
+     {
+      "key": "signup_city",
+      "header": "Signup city"
+     },
+     {
+      "key": "vehicle_types",
+      "header": "Vehicle types"
+     },
+     {
+      "key": "vehicle_number",
+      "header": "Vehicle number"
+     },
+     {
+      "key": "vehicle_model",
+      "header": "Model"
+     },
+     {
+      "key": "fuel_type",
+      "header": "Fuel"
+     },
+     {
+      "key": "vehicle_verification",
+      "header": "Vehicle status"
+     },
+     {
+      "key": "rc_expiry_date",
+      "header": "RC expiry"
+     },
+     {
+      "key": "insurance_valid_until",
+      "header": "Insurance till"
+     },
+     {
+      "key": "kyc_status",
+      "header": "KYC status"
+     },
+     {
+      "key": "verified_docs",
+      "header": "Docs verified"
+     },
+     {
+      "key": "is_verified",
+      "header": "Driver verified"
+     },
+     {
+      "key": "is_available",
+      "header": "Available"
+     },
+     {
+      "key": "is_on_duty",
+      "header": "On duty"
+     },
+     {
+      "key": "is_active",
+      "header": "Active"
+     },
+     {
+      "key": "is_suspended",
+      "header": "Suspended"
+     },
+     {
+      "key": "is_test_user",
+      "header": "Test account"
+     },
+     {
+      "key": "rating",
+      "header": "Rating"
+     },
+     {
+      "key": "ride_requests",
+      "header": "Offers received"
+     },
+     {
+      "key": "completed_rides",
+      "header": "Completed rides"
+     },
+     {
+      "key": "lifetime_earnings",
+      "header": "Lifetime earnings"
+     },
+     {
+      "key": "wallet_balance",
+      "header": "Wallet balance"
+     },
+     {
+      "key": "subscription_status",
+      "header": "Subscription"
+     },
+     {
+      "key": "last_ride_at",
+      "header": "Last ride"
+     },
+     {
+      "key": "last_ping_at",
+      "header": "Last GPS ping"
+     },
+     {
+      "key": "created_at",
+      "header": "Joined"
+     },
+     {
+      "key": "verified_at",
+      "header": "Verified on"
+     }
+    ]
+   }
+  ],
+  "cityGroups": [
+   {
+    "value": "ncr",
+    "label": "Delhi NCR",
+    "cityCount": 17
+   },
+   {
+    "value": "tricity",
+    "label": "Chandigarh Tricity",
+    "cityCount": 3
+   },
+   {
+    "value": "active",
+    "label": "All enabled cities",
+    "cityCount": null
+   }
+  ],
+  "cities": [
+   {
+    "value": 108,
+    "label": "Chandigarh",
+    "state": "Chandigarh",
+    "isActive": true
+   },
+   {
+    "value": 125,
+    "label": "Delhi",
+    "state": "Delhi",
+    "isActive": true
+   },
+   {
+    "value": 1409,
+    "label": "Ghaziabad",
+    "state": "Uttar Pradesh",
+    "isActive": true
+   },
+   {
+    "value": 1422,
+    "label": "Greater Noida",
+    "state": "Uttar Pradesh",
+    "isActive": true
+   },
+   {
+    "value": 153,
+    "label": "Gurgaon",
+    "state": "Haryana",
+    "isActive": true
+   },
+   {
+    "value": 384,
+    "label": "Noida",
+    "state": "Uttar Pradesh",
+    "isActive": true
+   },
+   {
+    "value": 159,
+    "label": "Panchkula",
+    "state": "Haryana",
+    "isActive": true
+   },
+   {
+    "value": 40,
+    "label": "Patna",
+    "state": "Bihar",
+    "isActive": true
+   },
+   {
+    "value": 1203,
+    "label": "Sahibzada Ajit Singh Nagar",
+    "state": "Punjab",
+    "isActive": true
+   },
+   {
+    "value": 162,
+    "label": "Sirsa",
+    "state": "Haryana",
+    "isActive": true
+   },
+   {
+    "value": 559,
+    "label": "Yamunanagar",
+    "state": "Haryana",
+    "isActive": true
+   },
+   {
+    "value": 898,
+    "label": "Agar",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 365,
+    "label": "Agra",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 975,
+    "label": "Ahmadabad",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 737,
+    "label": "Ahmadnagar",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 272,
+    "label": "Aizawl",
+    "state": "Mizoram",
+    "isActive": false
+   },
+   {
+    "value": 325,
+    "label": "Ajmer",
+    "state": "Rajasthan",
+    "isActive": false
+   },
+   {
+    "value": 48,
+    "label": "Akola",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 216,
+    "label": "Alappuzha",
+    "state": "Kerala",
+    "isActive": false
+   },
+   {
+    "value": 902,
+    "label": "Alipurduar",
+    "state": "West Bengal",
+    "isActive": false
+   },
+   {
+    "value": 445,
+    "label": "Alirajpur",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 408,
+    "label": "Almora",
+    "state": "Uttarakhand",
+    "isActive": false
+   },
+   {
+    "value": 326,
+    "label": "Alwar",
+    "state": "Rajasthan",
+    "isActive": false
+   },
+   {
+    "value": 366,
+    "label": "Ambedkar Nagar",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 862,
+    "label": "Amethi",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 128,
+    "label": "Amreli",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 311,
+    "label": "Amritsar",
+    "state": "Punjab",
+    "isActive": false
+   },
+   {
+    "value": 129,
+    "label": "Anand",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 86,
+    "label": "Anantapur",
+    "state": "Andhra Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 463,
+    "label": "Anantnag",
+    "state": "Jammu and Kashmir",
+    "isActive": false
+   },
+   {
+    "value": 287,
+    "label": "Angul",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 582,
+    "label": "Anjaw",
+    "state": "Arunachal Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 227,
+    "label": "Anuppur",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 22,
+    "label": "Araria",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 340,
+    "label": "Ariyalur",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 533,
+    "label": "Arwal",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 228,
+    "label": "Ashoknagar",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 367,
+    "label": "Auraiya",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 23,
+    "label": "Aurangabad",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 368,
+    "label": "Azamgarh",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 473,
+    "label": "Badgam",
+    "state": "Jammu and Kashmir",
+    "isActive": false
+   },
+   {
+    "value": 192,
+    "label": "Bagalkot",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 409,
+    "label": "Bageshwar",
+    "state": "Uttarakhand",
+    "isActive": false
+   },
+   {
+    "value": 369,
+    "label": "Baghpat",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 370,
+    "label": "Bahraich",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 597,
+    "label": "Baksa",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 371,
+    "label": "Ballia",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 658,
+    "label": "Balod",
+    "state": "Chhattisgarh",
+    "isActive": false
+   },
+   {
+    "value": 372,
+    "label": "Balrampur",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 130,
+    "label": "Banas Kantha",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 373,
+    "label": "Banda",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 477,
+    "label": "Bandipore",
+    "state": "Jammu and Kashmir",
+    "isActive": false
+   },
+   {
+    "value": 193,
+    "label": "Bangalore Rural",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 194,
+    "label": "Bangalore Urban",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 24,
+    "label": "Banka",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 414,
+    "label": "Bankura",
+    "state": "West Bengal",
+    "isActive": false
+   },
+   {
+    "value": 288,
+    "label": "Baragarh",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 327,
+    "label": "Baran",
+    "state": "Rajasthan",
+    "isActive": false
+   },
+   {
+    "value": 374,
+    "label": "Bareilly",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 773,
+    "label": "Bargarh",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 709,
+    "label": "Barnala",
+    "state": "Punjab",
+    "isActive": false
+   },
+   {
+    "value": 6,
+    "label": "Barpeta",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 68,
+    "label": "Barwani",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 109,
+    "label": "Bastar",
+    "state": "Chhattisgarh",
+    "isActive": false
+   },
+   {
+    "value": 375,
+    "label": "Basti",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 781,
+    "label": "Baudh",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 25,
+    "label": "Begusarai",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 195,
+    "label": "Belgaum",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 196,
+    "label": "Bellary",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 289,
+    "label": "Bhadrak",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 50,
+    "label": "Bhandara",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 328,
+    "label": "Bharatpur",
+    "state": "Rajasthan",
+    "isActive": false
+   },
+   {
+    "value": 131,
+    "label": "Bharuch",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 132,
+    "label": "Bhavnagar",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 69,
+    "label": "Bhind",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 151,
+    "label": "Bhiwani",
+    "state": "Haryana",
+    "isActive": false
+   },
+   {
+    "value": 26,
+    "label": "Bhojpur",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 70,
+    "label": "Bhopal",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 51,
+    "label": "Bid",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 197,
+    "label": "Bijapur",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 376,
+    "label": "Bijnor",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 110,
+    "label": "Bilaspur",
+    "state": "Himachal Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 262,
+    "label": "Bishnupur",
+    "state": "West Bengal",
+    "isActive": false
+   },
+   {
+    "value": 179,
+    "label": "Bokaro",
+    "state": "Jharkhand",
+    "isActive": false
+   },
+   {
+    "value": 7,
+    "label": "Bongaigaon",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 825,
+    "label": "Budaun",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 377,
+    "label": "Bulandshahr",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 52,
+    "label": "Buldana",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 71,
+    "label": "Burhanpur",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 27,
+    "label": "Buxar",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 164,
+    "label": "Chamba",
+    "state": "Himachal Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 410,
+    "label": "Chamoli",
+    "state": "Uttarakhand",
+    "isActive": false
+   },
+   {
+    "value": 411,
+    "label": "Champawat",
+    "state": "Uttarakhand",
+    "isActive": false
+   },
+   {
+    "value": 273,
+    "label": "Champhai",
+    "state": "Mizoram",
+    "isActive": false
+   },
+   {
+    "value": 198,
+    "label": "Chamrajnagar",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 378,
+    "label": "Chandauli",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 53,
+    "label": "Chandrapur",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 101,
+    "label": "Changlang",
+    "state": "Arunachal Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 341,
+    "label": "Chennai",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 72,
+    "label": "Chhatarpur",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 199,
+    "label": "Chikmagalur",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 592,
+    "label": "Chirang",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 200,
+    "label": "Chitradurga",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 379,
+    "label": "Chitrakoot",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 329,
+    "label": "Chittaurgarh",
+    "state": "Rajasthan",
+    "isActive": false
+   },
+   {
+    "value": 87,
+    "label": "Chittoor",
+    "state": "Andhra Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 263,
+    "label": "Churachandpur",
+    "state": "Manipur",
+    "isActive": false
+   },
+   {
+    "value": 342,
+    "label": "Coimbatore",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 343,
+    "label": "Cuddalore",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 88,
+    "label": "Cuddapah",
+    "state": "Andhra Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 290,
+    "label": "Cuttack",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 122,
+    "label": "Dadra and Nagar Haveli",
+    "state": "Dadra and Nagar Haveli",
+    "isActive": false
+   },
+   {
+    "value": 510,
+    "label": "Dadra & Nagar Haveli",
+    "state": "Dadra and Nagar Haveli",
+    "isActive": false
+   },
+   {
+    "value": 133,
+    "label": "Dahod",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 717,
+    "label": "Dakshina Kannada",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 123,
+    "label": "Daman",
+    "state": "Daman and Diu",
+    "isActive": false
+   },
+   {
+    "value": 73,
+    "label": "Damoh",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 28,
+    "label": "Darbhanga",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 8,
+    "label": "Darrang",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 229,
+    "label": "Datia",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 330,
+    "label": "Dausa",
+    "state": "Rajasthan",
+    "isActive": false
+   },
+   {
+    "value": 201,
+    "label": "Davanagere",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 666,
+    "label": "Dehradun",
+    "state": "Uttarakhand",
+    "isActive": false
+   },
+   {
+    "value": 291,
+    "label": "Deogarh",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 380,
+    "label": "Deoria",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 499,
+    "label": "Devbhumi Dwarka",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 230,
+    "label": "Dewas",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 361,
+    "label": "Dhalai",
+    "state": "Tripura",
+    "isActive": false
+   },
+   {
+    "value": 111,
+    "label": "Dhamtari",
+    "state": "Chhattisgarh",
+    "isActive": false
+   },
+   {
+    "value": 344,
+    "label": "Dharmapuri",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 202,
+    "label": "Dharwad",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 331,
+    "label": "Dhaulpur",
+    "state": "Rajasthan",
+    "isActive": false
+   },
+   {
+    "value": 9,
+    "label": "Dhemaji",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 588,
+    "label": "Dhubri",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 10,
+    "label": "Dhuburi",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 54,
+    "label": "Dhule",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 11,
+    "label": "Dibrugarh",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 280,
+    "label": "Dimapur",
+    "state": "Nagaland",
+    "isActive": false
+   },
+   {
+    "value": 345,
+    "label": "Dindigul",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 231,
+    "label": "Dindori",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 482,
+    "label": "Diu",
+    "state": "Daman and Diu",
+    "isActive": false
+   },
+   {
+    "value": 171,
+    "label": "Doda",
+    "state": "Jammu and Kashmir",
+    "isActive": false
+   },
+   {
+    "value": 491,
+    "label": "Dohad",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 180,
+    "label": "Dumka",
+    "state": "Jharkhand",
+    "isActive": false
+   },
+   {
+    "value": 332,
+    "label": "Dungarpur",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 112,
+    "label": "Durg",
+    "state": "Chhattisgarh",
+    "isActive": false
+   },
+   {
+    "value": 688,
+    "label": "East District",
+    "state": "Sikkim",
+    "isActive": false
+   },
+   {
+    "value": 643,
+    "label": "East Jaintia Hills",
+    "state": "Meghalaya",
+    "isActive": false
+   },
+   {
+    "value": 102,
+    "label": "East Kameng",
+    "state": "Arunachal Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 103,
+    "label": "East Siang",
+    "state": "Arunachal Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 346,
+    "label": "Erode",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 381,
+    "label": "Etah",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 152,
+    "label": "Faridabad",
+    "state": "Haryana",
+    "isActive": false
+   },
+   {
+    "value": 312,
+    "label": "Faridkot",
+    "state": "Punjab",
+    "isActive": false
+   },
+   {
+    "value": 313,
+    "label": "Fatehgarh Sahib",
+    "state": "Punjab",
+    "isActive": false
+   },
+   {
+    "value": 382,
+    "label": "Fatehpur",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 708,
+    "label": "Fazilka",
+    "state": "Punjab",
+    "isActive": false
+   },
+   {
+    "value": 383,
+    "label": "Firozabad",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 314,
+    "label": "Firozpur",
+    "state": "Punjab",
+    "isActive": false
+   },
+   {
+    "value": 203,
+    "label": "Gadag",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 760,
+    "label": "Gadchiroli",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 292,
+    "label": "Gajapati",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 471,
+    "label": "Ganderbal",
+    "state": "Jammu and Kashmir",
+    "isActive": false
+   },
+   {
+    "value": 134,
+    "label": "Gandhinagar",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 181,
+    "label": "Garhwa",
+    "state": "Jharkhand",
+    "isActive": false
+   },
+   {
+    "value": 29,
+    "label": "Gaya",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 497,
+    "label": "Gir Somnath",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 182,
+    "label": "Godda",
+    "state": "Jharkhand",
+    "isActive": false
+   },
+   {
+    "value": 12,
+    "label": "Golaghat",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 636,
+    "label": "Gomati",
+    "state": "Tripura",
+    "isActive": false
+   },
+   {
+    "value": 385,
+    "label": "Gonda",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 55,
+    "label": "Gondiya",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 386,
+    "label": "Gorakhpur",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 204,
+    "label": "Gulbarga",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 183,
+    "label": "Gumla",
+    "state": "Jharkhand",
+    "isActive": false
+   },
+   {
+    "value": 232,
+    "label": "Guna",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 315,
+    "label": "Gurdaspur",
+    "state": "Punjab",
+    "isActive": false
+   },
+   {
+    "value": 233,
+    "label": "Gwalior",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 13,
+    "label": "Hailakandi",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 333,
+    "label": "Hanumangarh",
+    "state": "Rajasthan",
+    "isActive": false
+   },
+   {
+    "value": 234,
+    "label": "Harda",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 387,
+    "label": "Hardoi",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 412,
+    "label": "Haridwar",
+    "state": "Uttarakhand",
+    "isActive": false
+   },
+   {
+    "value": 205,
+    "label": "Hassan",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 206,
+    "label": "Haveri",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 57,
+    "label": "Hingoli",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 154,
+    "label": "Hisar",
+    "state": "Haryana",
+    "isActive": false
+   },
+   {
+    "value": 316,
+    "label": "Hoshiarpur",
+    "state": "Punjab",
+    "isActive": false
+   },
+   {
+    "value": 217,
+    "label": "Idukki",
+    "state": "Kerala",
+    "isActive": false
+   },
+   {
+    "value": 235,
+    "label": "Indore",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 236,
+    "label": "Jabalpur",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 774,
+    "label": "Jagatsinghapur",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 293,
+    "label": "Jagatsinghpur",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 334,
+    "label": "Jaipur",
+    "state": "Rajasthan",
+    "isActive": false
+   },
+   {
+    "value": 335,
+    "label": "Jaisalmer",
+    "state": "Rajasthan",
+    "isActive": false
+   },
+   {
+    "value": 1275,
+    "label": "Jajapur",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 294,
+    "label": "Jajpur",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 317,
+    "label": "Jalandhar",
+    "state": "Punjab",
+    "isActive": false
+   },
+   {
+    "value": 58,
+    "label": "Jalgaon",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 59,
+    "label": "Jalna",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 336,
+    "label": "Jalor",
+    "state": "Rajasthan",
+    "isActive": false
+   },
+   {
+    "value": 415,
+    "label": "Jalpaiguri",
+    "state": "West Bengal",
+    "isActive": false
+   },
+   {
+    "value": 172,
+    "label": "Jammu",
+    "state": "Jammu and Kashmir",
+    "isActive": false
+   },
+   {
+    "value": 135,
+    "label": "Jamnagar",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 184,
+    "label": "Jamtara",
+    "state": "Jharkhand",
+    "isActive": false
+   },
+   {
+    "value": 30,
+    "label": "Jamui",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 885,
+    "label": "Jangaon",
+    "state": "Telangana",
+    "isActive": false
+   },
+   {
+    "value": 113,
+    "label": "Janjgir-Champa",
+    "state": "Chhattisgarh",
+    "isActive": false
+   },
+   {
+    "value": 114,
+    "label": "Jashpur",
+    "state": "Chhattisgarh",
+    "isActive": false
+   },
+   {
+    "value": 388,
+    "label": "Jaunpur",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 31,
+    "label": "Jehanabad",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 155,
+    "label": "Jhajjar",
+    "state": "Haryana",
+    "isActive": false
+   },
+   {
+    "value": 903,
+    "label": "Jhargram",
+    "state": "West Bengal",
+    "isActive": false
+   },
+   {
+    "value": 295,
+    "label": "Jharsuguda",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 337,
+    "label": "Jodhpur",
+    "state": "Rajasthan",
+    "isActive": false
+   },
+   {
+    "value": 14,
+    "label": "Jorhat",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 124,
+    "label": "Junagadh",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 389,
+    "label": "Jyotiba Phule Nagar",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 649,
+    "label": "Kabeerdham",
+    "state": "Chhattisgarh",
+    "isActive": false
+   },
+   {
+    "value": 137,
+    "label": "Kachchh",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 156,
+    "label": "Kaithal",
+    "state": "Haryana",
+    "isActive": false
+   },
+   {
+    "value": 900,
+    "label": "Kakching",
+    "state": "Manipur",
+    "isActive": false
+   },
+   {
+    "value": 904,
+    "label": "Kalimpong",
+    "state": "West Bengal",
+    "isActive": false
+   },
+   {
+    "value": 890,
+    "label": "Kamareddy",
+    "state": "Telangana",
+    "isActive": false
+   },
+   {
+    "value": 605,
+    "label": "Kamrup Metropolitan",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 347,
+    "label": "Kancheepuram",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 296,
+    "label": "Kandhamal",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 390,
+    "label": "Kannauj",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 348,
+    "label": "Kanniyakumari",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 218,
+    "label": "Kannur",
+    "state": "Kerala",
+    "isActive": false
+   },
+   {
+    "value": 391,
+    "label": "Kanpur",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 392,
+    "label": "Kanpur Dehat",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 318,
+    "label": "Kapurthala",
+    "state": "Punjab",
+    "isActive": false
+   },
+   {
+    "value": 74,
+    "label": "Karauli",
+    "state": "Rajasthan",
+    "isActive": false
+   },
+   {
+    "value": 173,
+    "label": "Kargil",
+    "state": "Ladakh",
+    "isActive": false
+   },
+   {
+    "value": 15,
+    "label": "Karimganj",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 349,
+    "label": "Karur",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 174,
+    "label": "Kathua",
+    "state": "Jammu and Kashmir",
+    "isActive": false
+   },
+   {
+    "value": 32,
+    "label": "Katihar",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 237,
+    "label": "Katni",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 115,
+    "label": "Kawardha",
+    "state": "Chhattisgarh",
+    "isActive": false
+   },
+   {
+    "value": 297,
+    "label": "Kendrapara",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 783,
+    "label": "Kendujhar",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 33,
+    "label": "Khagaria",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 89,
+    "label": "Khammam",
+    "state": "Telangana",
+    "isActive": false
+   },
+   {
+    "value": 929,
+    "label": "Khandwa (East Nimar)",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 924,
+    "label": "Khargone (West Nimar)",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 138,
+    "label": "Kheda",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 832,
+    "label": "Kheri",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 298,
+    "label": "Khordha",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 632,
+    "label": "Khowai",
+    "state": "Tripura",
+    "isActive": false
+   },
+   {
+    "value": 522,
+    "label": "Khunti",
+    "state": "Jharkhand",
+    "isActive": false
+   },
+   {
+    "value": 165,
+    "label": "Kinnaur",
+    "state": "Himachal Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 34,
+    "label": "Kishanganj",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 480,
+    "label": "Kishtwar",
+    "state": "Jammu and Kashmir",
+    "isActive": false
+   },
+   {
+    "value": 207,
+    "label": "Kodagu",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 281,
+    "label": "Kohima",
+    "state": "Nagaland",
+    "isActive": false
+   },
+   {
+    "value": 16,
+    "label": "Kokrajhar",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 208,
+    "label": "Kolar",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 274,
+    "label": "Kolasib",
+    "state": "Mizoram",
+    "isActive": false
+   },
+   {
+    "value": 60,
+    "label": "Kolhapur",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 416,
+    "label": "Kolkata",
+    "state": "West Bengal",
+    "isActive": false
+   },
+   {
+    "value": 219,
+    "label": "Kollam",
+    "state": "Kerala",
+    "isActive": false
+   },
+   {
+    "value": 653,
+    "label": "Kondagaon",
+    "state": "Chhattisgarh",
+    "isActive": false
+   },
+   {
+    "value": 209,
+    "label": "Koppal",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 299,
+    "label": "Koraput",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 116,
+    "label": "Korba",
+    "state": "Chhattisgarh",
+    "isActive": false
+   },
+   {
+    "value": 117,
+    "label": "Koriya",
+    "state": "Chhattisgarh",
+    "isActive": false
+   },
+   {
+    "value": 75,
+    "label": "Kota",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 220,
+    "label": "Kottayam",
+    "state": "Kerala",
+    "isActive": false
+   },
+   {
+    "value": 221,
+    "label": "Kozhikode",
+    "state": "Kerala",
+    "isActive": false
+   },
+   {
+    "value": 90,
+    "label": "Krishna",
+    "state": "Andhra Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 878,
+    "label": "Krishnagiri",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 464,
+    "label": "Kulgam",
+    "state": "Jammu and Kashmir",
+    "isActive": false
+   },
+   {
+    "value": 475,
+    "label": "Kupwara",
+    "state": "Jammu and Kashmir",
+    "isActive": false
+   },
+   {
+    "value": 91,
+    "label": "Kurnool",
+    "state": "Andhra Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 157,
+    "label": "Kurukshetra",
+    "state": "Haryana",
+    "isActive": false
+   },
+   {
+    "value": 104,
+    "label": "Kurung Kumey",
+    "state": "Arunachal Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 393,
+    "label": "Kushinagar",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 17,
+    "label": "Lakhimpur",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 35,
+    "label": "Lakhisarai",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 684,
+    "label": "Lakshadweep",
+    "state": "Lakshadweep",
+    "isActive": false
+   },
+   {
+    "value": 394,
+    "label": "Lalitpur",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 185,
+    "label": "Latehar",
+    "state": "Jharkhand",
+    "isActive": false
+   },
+   {
+    "value": 61,
+    "label": "Latur",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 275,
+    "label": "Lawngtlai",
+    "state": "Mizoram",
+    "isActive": false
+   },
+   {
+    "value": 957,
+    "label": "Leh(Ladakh)",
+    "state": "Ladakh",
+    "isActive": false
+   },
+   {
+    "value": 186,
+    "label": "Lohardaga",
+    "state": "Jharkhand",
+    "isActive": false
+   },
+   {
+    "value": 105,
+    "label": "Lower Dibang Valley",
+    "state": "Arunachal Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 106,
+    "label": "Lower Subansiri",
+    "state": "Arunachal Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 395,
+    "label": "Lucknow",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 319,
+    "label": "Ludhiana",
+    "state": "Punjab",
+    "isActive": false
+   },
+   {
+    "value": 276,
+    "label": "Lunglei",
+    "state": "Mizoram",
+    "isActive": false
+   },
+   {
+    "value": 36,
+    "label": "Madhepura",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 37,
+    "label": "Madhubani",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 78,
+    "label": "Madurai",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 895,
+    "label": "Mahabubabad",
+    "state": "Telangana",
+    "isActive": false
+   },
+   {
+    "value": 396,
+    "label": "Maharajganj",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 118,
+    "label": "Mahasamund",
+    "state": "Chhattisgarh",
+    "isActive": false
+   },
+   {
+    "value": 308,
+    "label": "Mahe",
+    "state": "Puducherry",
+    "isActive": false
+   },
+   {
+    "value": 158,
+    "label": "Mahendragarh",
+    "state": "Haryana",
+    "isActive": false
+   },
+   {
+    "value": 139,
+    "label": "Mahesana",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 397,
+    "label": "Mahoba",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 398,
+    "label": "Mainpuri",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 222,
+    "label": "Malappuram",
+    "state": "Kerala",
+    "isActive": false
+   },
+   {
+    "value": 300,
+    "label": "Malkangiri",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 277,
+    "label": "Mamit",
+    "state": "Mizoram",
+    "isActive": false
+   },
+   {
+    "value": 166,
+    "label": "Mandi",
+    "state": "Himachal Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 238,
+    "label": "Mandla",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 239,
+    "label": "Mandsaur",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 210,
+    "label": "Mandya",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 320,
+    "label": "Mansa",
+    "state": "Punjab",
+    "isActive": false
+   },
+   {
+    "value": 399,
+    "label": "Mathura",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 400,
+    "label": "Mau",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 905,
+    "label": "Mayiladuthurai",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 92,
+    "label": "Medak",
+    "state": "Telangana",
+    "isActive": false
+   },
+   {
+    "value": 896,
+    "label": "Medchal",
+    "state": "Telangana",
+    "isActive": false
+   },
+   {
+    "value": 401,
+    "label": "Meerut",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 321,
+    "label": "Moga",
+    "state": "Punjab",
+    "isActive": false
+   },
+   {
+    "value": 282,
+    "label": "Mon",
+    "state": "Nagaland",
+    "isActive": false
+   },
+   {
+    "value": 507,
+    "label": "Morbi",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 240,
+    "label": "Morena",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 594,
+    "label": "Morigaon",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 56,
+    "label": "Mumbai",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 768,
+    "label": "Mumbai Suburban",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 647,
+    "label": "Mungeli",
+    "state": "Chhattisgarh",
+    "isActive": false
+   },
+   {
+    "value": 38,
+    "label": "Munger",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 417,
+    "label": "Murshidabad",
+    "state": "West Bengal",
+    "isActive": false
+   },
+   {
+    "value": 402,
+    "label": "Muzaffarnagar",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 39,
+    "label": "Muzaffarpur",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 211,
+    "label": "Mysore",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 301,
+    "label": "Nabarangpur",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 18,
+    "label": "Nagaon",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 79,
+    "label": "Nagapattinam",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 62,
+    "label": "Nagpur",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 19,
+    "label": "Nalbari",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 93,
+    "label": "Nalgonda",
+    "state": "Telangana",
+    "isActive": false
+   },
+   {
+    "value": 80,
+    "label": "Namakkal",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 63,
+    "label": "Nanded",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 64,
+    "label": "Nandurbar",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 654,
+    "label": "Narayanpur",
+    "state": "Chhattisgarh",
+    "isActive": false
+   },
+   {
+    "value": 140,
+    "label": "Narmada",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 422,
+    "label": "Narsimhapur",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 65,
+    "label": "Nashik",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 141,
+    "label": "Navsari",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 241,
+    "label": "Neemuch",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 94,
+    "label": "Nellore",
+    "state": "Andhra Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 901,
+    "label": "New Delhi",
+    "state": "Delhi",
+    "isActive": false
+   },
+   {
+    "value": 81,
+    "label": "Nilgiris",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 889,
+    "label": "Nirmal",
+    "state": "Telangana",
+    "isActive": false
+   },
+   {
+    "value": 95,
+    "label": "Nizamabad",
+    "state": "Telangana",
+    "isActive": false
+   },
+   {
+    "value": 685,
+    "label": "North District",
+    "state": "Sikkim",
+    "isActive": false
+   },
+   {
+    "value": 645,
+    "label": "North Garo Hills",
+    "state": "Meghalaya",
+    "isActive": false
+   },
+   {
+    "value": 126,
+    "label": "North Goa",
+    "state": "Goa",
+    "isActive": false
+   },
+   {
+    "value": 362,
+    "label": "North Tripura",
+    "state": "Tripura",
+    "isActive": false
+   },
+   {
+    "value": 302,
+    "label": "Nuapada",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 66,
+    "label": "Osmanabad",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 187,
+    "label": "Pakur",
+    "state": "Jharkhand",
+    "isActive": false
+   },
+   {
+    "value": 560,
+    "label": "Palwal",
+    "state": "Haryana",
+    "isActive": false
+   },
+   {
+    "value": 142,
+    "label": "Panch Mahals",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 160,
+    "label": "Panipat",
+    "state": "Haryana",
+    "isActive": false
+   },
+   {
+    "value": 242,
+    "label": "Panna",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 67,
+    "label": "Parbhani",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 143,
+    "label": "Patan",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 674,
+    "label": "Pathanamthitta",
+    "state": "Kerala",
+    "isActive": false
+   },
+   {
+    "value": 693,
+    "label": "Pathankot",
+    "state": "Punjab",
+    "isActive": false
+   },
+   {
+    "value": 322,
+    "label": "Patiala",
+    "state": "Punjab",
+    "isActive": false
+   },
+   {
+    "value": 223,
+    "label": "Pattanamtitta",
+    "state": "Kerala",
+    "isActive": false
+   },
+   {
+    "value": 891,
+    "label": "Peddapalli",
+    "state": "Telangana",
+    "isActive": false
+   },
+   {
+    "value": 82,
+    "label": "Perambalur",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 631,
+    "label": "Peren",
+    "state": "Nagaland",
+    "isActive": false
+   },
+   {
+    "value": 283,
+    "label": "Phek",
+    "state": "Nagaland",
+    "isActive": false
+   },
+   {
+    "value": 144,
+    "label": "Porbandar",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 96,
+    "label": "Prakasam",
+    "state": "Andhra Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 403,
+    "label": "Pratapgarh",
+    "state": "Rajasthan",
+    "isActive": false
+   },
+   {
+    "value": 309,
+    "label": "Puducherry",
+    "state": "Puducherry",
+    "isActive": false
+   },
+   {
+    "value": 83,
+    "label": "Pudukkottai",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 175,
+    "label": "Pulwama",
+    "state": "Jammu and Kashmir",
+    "isActive": false
+   },
+   {
+    "value": 176,
+    "label": "Punch",
+    "state": "Jammu and Kashmir",
+    "isActive": false
+   },
+   {
+    "value": 252,
+    "label": "Pune",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 188,
+    "label": "Purba Singhbhum",
+    "state": "Jharkhand",
+    "isActive": false
+   },
+   {
+    "value": 303,
+    "label": "Puri",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 41,
+    "label": "Purnia",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 212,
+    "label": "Raichur",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 119,
+    "label": "Raigarh",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 120,
+    "label": "Raipur",
+    "state": "Rajasthan",
+    "isActive": false
+   },
+   {
+    "value": 243,
+    "label": "Raisen",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 892,
+    "label": "Rajanna Sircilla",
+    "state": "Telangana",
+    "isActive": false
+   },
+   {
+    "value": 145,
+    "label": "Rajkot",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 76,
+    "label": "Rajsamand",
+    "state": "Rajasthan",
+    "isActive": false
+   },
+   {
+    "value": 735,
+    "label": "Ramanagara",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 84,
+    "label": "Ramanathapuram",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 470,
+    "label": "Ramban",
+    "state": "Jammu and Kashmir",
+    "isActive": false
+   },
+   {
+    "value": 529,
+    "label": "Ramgarh",
+    "state": "Jharkhand",
+    "isActive": false
+   },
+   {
+    "value": 189,
+    "label": "Ranchi",
+    "state": "Jharkhand",
+    "isActive": false
+   },
+   {
+    "value": 97,
+    "label": "Rangareddi",
+    "state": "Telangana",
+    "isActive": false
+   },
+   {
+    "value": 253,
+    "label": "Ratnagiri",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 304,
+    "label": "Rayagada",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 244,
+    "label": "Rewa",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 268,
+    "label": "Ri-Bhoi",
+    "state": "Meghalaya",
+    "isActive": false
+   },
+   {
+    "value": 161,
+    "label": "Rohtak",
+    "state": "Haryana",
+    "isActive": false
+   },
+   {
+    "value": 669,
+    "label": "Rudraprayag",
+    "state": "Uttarakhand",
+    "isActive": false
+   },
+   {
+    "value": 323,
+    "label": "Rupnagar",
+    "state": "Punjab",
+    "isActive": false
+   },
+   {
+    "value": 146,
+    "label": "Sabar Kantha",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 42,
+    "label": "Saharsa",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 190,
+    "label": "Sahibganj",
+    "state": "Jharkhand",
+    "isActive": false
+   },
+   {
+    "value": 278,
+    "label": "Saiha",
+    "state": "Mizoram",
+    "isActive": false
+   },
+   {
+    "value": 85,
+    "label": "Salem",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 476,
+    "label": "Samba",
+    "state": "Jammu and Kashmir",
+    "isActive": false
+   },
+   {
+    "value": 305,
+    "label": "Sambalpur",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 824,
+    "label": "Sambhal",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 254,
+    "label": "Sangli",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 324,
+    "label": "Sangrur",
+    "state": "Punjab",
+    "isActive": false
+   },
+   {
+    "value": 404,
+    "label": "Sant Kabir Nagar",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 405,
+    "label": "Sant Ravi Das Nagar",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 255,
+    "label": "Satara",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 245,
+    "label": "Satna",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 246,
+    "label": "Sehore",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 264,
+    "label": "Senapati",
+    "state": "Manipur",
+    "isActive": false
+   },
+   {
+    "value": 247,
+    "label": "Seoni",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 279,
+    "label": "Serchhip",
+    "state": "Mizoram",
+    "isActive": false
+   },
+   {
+    "value": 248,
+    "label": "Shahdol",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 710,
+    "label": "Shahid Bhagat Singh Nagar",
+    "state": "Punjab",
+    "isActive": false
+   },
+   {
+    "value": 43,
+    "label": "Sheikhpura",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 44,
+    "label": "Sheohar",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 249,
+    "label": "Sheopur",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 167,
+    "label": "Shimla",
+    "state": "Himachal Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 213,
+    "label": "Shimoga",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 250,
+    "label": "Shivpuri",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 827,
+    "label": "Shrawasti",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 465,
+    "label": "Shupiyan",
+    "state": "Jammu and Kashmir",
+    "isActive": false
+   },
+   {
+    "value": 849,
+    "label": "Siddharthnagar",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 893,
+    "label": "Siddipet",
+    "state": "Telangana",
+    "isActive": false
+   },
+   {
+    "value": 251,
+    "label": "Sidhi",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 191,
+    "label": "Simdega",
+    "state": "Jharkhand",
+    "isActive": false
+   },
+   {
+    "value": 256,
+    "label": "Sindhudurg",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 446,
+    "label": "Singrauli",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 168,
+    "label": "Sirmaur",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 77,
+    "label": "Sirohi",
+    "state": "Rajasthan",
+    "isActive": false
+   },
+   {
+    "value": 350,
+    "label": "Sivaganga",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 169,
+    "label": "Solan",
+    "state": "Himachal Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 257,
+    "label": "Solapur",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 406,
+    "label": "Sonbhadra",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 306,
+    "label": "Sonepur",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 20,
+    "label": "Sonitpur",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 575,
+    "label": "South Andaman",
+    "state": "Andaman and Nicobar Islands",
+    "isActive": false
+   },
+   {
+    "value": 686,
+    "label": "South District",
+    "state": "Sikkim",
+    "isActive": false
+   },
+   {
+    "value": 269,
+    "label": "South Garo Hills",
+    "state": "Meghalaya",
+    "isActive": false
+   },
+   {
+    "value": 127,
+    "label": "South Goa",
+    "state": "Goa",
+    "isActive": false
+   },
+   {
+    "value": 363,
+    "label": "South Tripura",
+    "state": "Tripura",
+    "isActive": false
+   },
+   {
+    "value": 642,
+    "label": "South West Garo Hills",
+    "state": "Meghalaya",
+    "isActive": false
+   },
+   {
+    "value": 640,
+    "label": "South West Khasi Hills",
+    "state": "Meghalaya",
+    "isActive": false
+   },
+   {
+    "value": 98,
+    "label": "Srikakulam",
+    "state": "Andhra Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 177,
+    "label": "Srinagar",
+    "state": "Jammu and Kashmir",
+    "isActive": false
+   },
+   {
+    "value": 770,
+    "label": "Subarnapur",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 307,
+    "label": "Sundargarh",
+    "state": "Odisha",
+    "isActive": false
+   },
+   {
+    "value": 107,
+    "label": "Supaul",
+    "state": "Bihar",
+    "isActive": false
+   },
+   {
+    "value": 147,
+    "label": "Surat",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 148,
+    "label": "Surendranagar",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 121,
+    "label": "Surguja",
+    "state": "Chhattisgarh",
+    "isActive": false
+   },
+   {
+    "value": 265,
+    "label": "Tamenglong",
+    "state": "Manipur",
+    "isActive": false
+   },
+   {
+    "value": 503,
+    "label": "Tapi",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 1188,
+    "label": "Tarn Taran",
+    "state": "Punjab",
+    "isActive": false
+   },
+   {
+    "value": 1,
+    "label": "Tawang",
+    "state": "Arunachal Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 258,
+    "label": "Thane",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 351,
+    "label": "Thanjavur",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 352,
+    "label": "Theni",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 353,
+    "label": "Thiruvallur",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 224,
+    "label": "Thiruvananthapuram",
+    "state": "Kerala",
+    "isActive": false
+   },
+   {
+    "value": 354,
+    "label": "Thiruvarur",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 873,
+    "label": "Thoothukkudi",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 355,
+    "label": "Thoothukudi",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 266,
+    "label": "Thoubal",
+    "state": "Manipur",
+    "isActive": false
+   },
+   {
+    "value": 225,
+    "label": "Thrissur",
+    "state": "Kerala",
+    "isActive": false
+   },
+   {
+    "value": 21,
+    "label": "Tinsukia",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 814,
+    "label": "Tiruchirappalli",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 810,
+    "label": "Tirunelveli",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 356,
+    "label": "Tirunelveli Kattabo",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 815,
+    "label": "Tiruppur",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 357,
+    "label": "Tiruvannamalai",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 338,
+    "label": "Tonk",
+    "state": "Rajasthan",
+    "isActive": false
+   },
+   {
+    "value": 284,
+    "label": "Tuensang",
+    "state": "Nagaland",
+    "isActive": false
+   },
+   {
+    "value": 214,
+    "label": "Tumkur",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 339,
+    "label": "Udaipur",
+    "state": "Tripura",
+    "isActive": false
+   },
+   {
+    "value": 603,
+    "label": "Udalguri",
+    "state": "Assam",
+    "isActive": false
+   },
+   {
+    "value": 178,
+    "label": "Udhampur",
+    "state": "Jammu and Kashmir",
+    "isActive": false
+   },
+   {
+    "value": 413,
+    "label": "Udham Singh Nagar",
+    "state": "Uttarakhand",
+    "isActive": false
+   },
+   {
+    "value": 215,
+    "label": "Udupi",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 45,
+    "label": "Ujjain",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 267,
+    "label": "Ukhrul",
+    "state": "Manipur",
+    "isActive": false
+   },
+   {
+    "value": 46,
+    "label": "Umaria",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 170,
+    "label": "Una",
+    "state": "Himachal Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 2,
+    "label": "Upper Siang",
+    "state": "Arunachal Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 3,
+    "label": "Upper Subansiri",
+    "state": "Arunachal Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 650,
+    "label": "Uttar Bastar Kanker",
+    "state": "Chhattisgarh",
+    "isActive": false
+   },
+   {
+    "value": 149,
+    "label": "Vadodara",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 150,
+    "label": "Valsad",
+    "state": "Gujarat",
+    "isActive": false
+   },
+   {
+    "value": 407,
+    "label": "Varanasi",
+    "state": "Uttar Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 358,
+    "label": "Vellore",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 47,
+    "label": "Vidisha",
+    "state": "Madhya Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 359,
+    "label": "Villupuram",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 360,
+    "label": "Virudhunagar",
+    "state": "Tamil Nadu",
+    "isActive": false
+   },
+   {
+    "value": 513,
+    "label": "Visakhapatnam",
+    "state": "Andhra Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 99,
+    "label": "Vizianagaram",
+    "state": "Andhra Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 100,
+    "label": "Warangal",
+    "state": "Telangana",
+    "isActive": false
+   },
+   {
+    "value": 1391,
+    "label": "Warangal (R)",
+    "state": "Telangana",
+    "isActive": false
+   },
+   {
+    "value": 1392,
+    "label": "Warangal (U)",
+    "state": "Telangana",
+    "isActive": false
+   },
+   {
+    "value": 259,
+    "label": "Wardha",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 260,
+    "label": "Washim",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 226,
+    "label": "Wayanad",
+    "state": "Kerala",
+    "isActive": false
+   },
+   {
+    "value": 687,
+    "label": "West District",
+    "state": "Sikkim",
+    "isActive": false
+   },
+   {
+    "value": 270,
+    "label": "West Garo Hills",
+    "state": "Meghalaya",
+    "isActive": false
+   },
+   {
+    "value": 644,
+    "label": "West Jaintia Hills",
+    "state": "Meghalaya",
+    "isActive": false
+   },
+   {
+    "value": 4,
+    "label": "West Kameng",
+    "state": "Arunachal Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 271,
+    "label": "West Khasi Hills",
+    "state": "Meghalaya",
+    "isActive": false
+   },
+   {
+    "value": 5,
+    "label": "West Siang",
+    "state": "Arunachal Pradesh",
+    "isActive": false
+   },
+   {
+    "value": 364,
+    "label": "West Tripura",
+    "state": "Tripura",
+    "isActive": false
+   },
+   {
+    "value": 285,
+    "label": "Wokha",
+    "state": "Nagaland",
+    "isActive": false
+   },
+   {
+    "value": 713,
+    "label": "Yadgir",
+    "state": "Karnataka",
+    "isActive": false
+   },
+   {
+    "value": 310,
+    "label": "Yanam",
+    "state": "Puducherry",
+    "isActive": false
+   },
+   {
+    "value": 261,
+    "label": "Yavatmal",
+    "state": "Maharashtra",
+    "isActive": false
+   },
+   {
+    "value": 286,
+    "label": "Zunheboto",
+    "state": "Nagaland",
+    "isActive": false
+   }
+  ]
+ },
+ "jobs": [
+  {
+   "id": 12,
+   "dataset": "passengers",
+   "status": "ready",
+   "filters": {
+    "city": {
+     "groups": [
+      "ncr"
+     ]
+    },
+    "kyc_status": [
+     "verified"
+    ]
+   },
+   "requested_by_email": "akashgupta@gomobility.co.in",
+   "ip_address": "49.36.12.7",
+   "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/129 Safari/537.36",
+   "row_count": 182,
+   "file_size_bytes": 60505,
+   "download_count": 3,
+   "last_downloaded_at": "2026-09-19T09:00:00Z",
+   "created_at": "2026-09-19T08:40:00Z"
+  },
+  {
+   "id": 11,
+   "dataset": "drivers",
+   "status": "running",
+   "filters": {},
+   "requested_by_email": "ops.lead@gomobility.co.in",
+   "ip_address": null,
+   "user_agent": null,
+   "download_count": 0,
+   "created_at": "2026-09-19T08:30:00Z"
+  },
+  {
+   "id": 10,
+   "dataset": "drivers",
+   "status": "failed",
+   "filters": {
+    "vehicle_type": [
+     "car"
+    ]
+   },
+   "requested_by_email": "ops.lead@gomobility.co.in",
+   "error_message": "connection terminated unexpectedly",
+   "download_count": 0,
+   "created_at": "2026-09-19T08:00:00Z"
+  },
+  {
+   "id": 9,
+   "dataset": "passengers",
+   "status": "queued",
+   "filters": {
+    "is_test_user": "false"
+   },
+   "requested_by_email": null,
+   "download_count": 0,
+   "created_at": "2026-09-19T07:50:00Z"
+  }
+ ],
+ "pagination": {
+  "total": 4,
+  "limit": 20,
+  "offset": 0
+ }
+}

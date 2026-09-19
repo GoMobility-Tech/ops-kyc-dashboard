@@ -4,7 +4,7 @@ import {
   FileSpreadsheet, AlertTriangle, Loader2,
 } from 'lucide-react';
 import {
-  Card, Badge, Button, Select, Alert, Spinner, EmptyState,
+  Card, Badge, Button, Select, EmptyState,
   Table, THead, TBody, TH, TR, TD,
 } from '../../components/ui';
 import { getExportDownloadUrl } from '../../api/opsApi.js';
@@ -136,8 +136,8 @@ function ExportRow({ row, onError, onDownloaded }) {
   );
 }
 
-export default function HistoryTab({
-  rows, pagination, loading, datasets,
+export default function JobsTable({
+  rows, pagination, datasets,
   filters, onFilterChange, onPage, onRefresh, onError, onDownloaded,
 }) {
   const { total = 0, limit = 20, offset = 0 } = pagination || {};
@@ -147,10 +147,13 @@ export default function HistoryTab({
 
   return (
     <div className="space-y-3">
-      <Alert tone="info">
-        Every export ever requested, newest first. Files do not expire — a sheet built
-        months ago still downloads today, and every download is counted.
-      </Alert>
+      <div className="flex items-center gap-2 flex-wrap">
+        <h3 className="text-sm font-bold text-accent-navy flex-1">Exports</h3>
+      </div>
+      <p className="text-[11px] text-ink-muted -mt-1 leading-relaxed">
+        Files do not expire — a sheet built months ago still downloads today, and every
+        download is counted.
+      </p>
 
       <div className="flex items-center gap-2 flex-wrap">
         <Select
@@ -184,9 +187,7 @@ export default function HistoryTab({
         )}
       </div>
 
-      {loading && rows.length === 0 ? (
-        <div className="py-12 flex justify-center"><Spinner /></div>
-      ) : rows.length === 0 ? (
+      {rows.length === 0 ? (
         <EmptyState
           icon={FileSpreadsheet}
           title="No exports yet"
