@@ -4,9 +4,48 @@ import { Card, Badge, Button, Alert, Modal, Input, Select } from '../../componen
 import { FieldGrid, useRowEditor } from './FieldGrid.jsx';
 import SaveBar from './SaveBar.jsx';
 import {
-  VEHICLE_GROUPS, VEHICLE_FIELDS, splitVehiclePatch, fmtRupees,
+  VEHICLE_GROUPS, VEHICLE_FIELDS, splitVehiclePatch, fmtRupees, conveniencePreview,
 } from './pricingMeta.js';
 import { updatePricingVehicle, createPricingVehicle } from '../../api/opsApi.js';
+
+// ─── Convenience fee — rider ko sach me kya lagta hai ───────────────────────
+//
+// Do number box (off-peak / peak) apne aap jhoot bolte hain: wo STARTING point
+// hain, final nahi. Distance band unhe multiply karta hai, aur wo multiplier
+// ek alag tab pe baitha hai.
+//
+// Ops ne ye poocha: "₹15 static hai, par multiplier bhi chalta hai — to 15 hai
+// kya?" Jawab screen pe hona chahiye, doc me nahi.
+function ConveniencePreview({ draft, tiers }) {
+  const cells = conveniencePreview(draft, tiers);
+  if (!cells.length) return null;
+
+  const switched = cells.find(c => c.byPct);
+
+  return (
+    <div className="rounded-lg border border-line bg-surface-alt px-3 py-2.5 mt-1">
+      <p className="text-[11px] font-semibold text-accent-navy mb-1.5">
+        What the rider is actually charged
+      </p>
+      <div className="flex items-center gap-3 flex-wrap">
+        {cells.map(c => (
+          <span key={c.km} className="text-[11px] tabular-nums">
+            <span className="text-ink-faint">{c.km}km</span>
+            <span className="text-ink font-semibold ml-1">₹{c.amount.toFixed(2)}</span>
+            <span className="text-ink-faint ml-0.5">
+              {c.byPct ? `(${c.pct}%)` : `(${c.multiplier}×)`}
+            </span>
+          </span>
+        ))}
+      </div>
+      <p className="text-[10px] text-ink-faint mt-1.5 leading-relaxed">
+        Base fare × share × distance band. On longer rides the percentage from the
+        Distance tab takes over once it is the bigger of the two
+        {switched ? ` — here that happens around ${switched.km} km.` : '.'}
+      </p>
+    </div>
+  );
+}
 
 // ─── One vehicle ────────────────────────────────────────────────────────────
 //
@@ -14,7 +53,7 @@ import { updatePricingVehicle, createPricingVehicle } from '../../api/opsApi.js'
 // of them; opening every one at once turns the screen into a wall nobody reads,
 // and the summary line answers the question that gets asked most ("what does a
 // car cost right now?") without expanding anything.
-function VehicleCard({ row, onSaved, onError }) {
+function VehicleCard({ row, tiers, onSaved, onError }) {
   const [open, setOpen]     = useState(false);
   const [saving, setSaving] = useState(false);
   const { draft, set, reset, patch, changedCount, original } = useRowEditor(row, VEHICLE_FIELDS);
@@ -51,7 +90,7 @@ function VehicleCard({ row, onSaved, onError }) {
           </div>
           <p className="text-[11px] text-ink-muted mt-0.5 tabular-nums">
             Base {fmtRupees(row.base_fare)} · {fmtRupees(row.per_km_rate)}/km · min {fmtRupees(row.minimum_fare)}
-            {row.off_peak_base != null && ` · conv ${fmtRupees(row.off_peak_base)}`}
+            {` · conv ${fmtRupees((Number(row.base_fare) || 0) * (Number(row.convenience_base_mult) || 1))}`}
           </p>
         </div>
       </button>
@@ -71,6 +110,9 @@ function VehicleCard({ row, onSaved, onError }) {
                 onChange={set}
                 disabled={saving}
               />
+              {g.preview === 'convenience' && (
+                <ConveniencePreview draft={draft} tiers={tiers} />
+              )}
             </div>
           ))}
           <SaveBar changedCount={changedCount} saving={saving} onSave={save} onReset={reset} />
@@ -163,7 +205,7 @@ function AddVehicleModal({ open, onClose, types, onSaved, onError }) {
   );
 }
 
-export default function VehiclesTab({ data, onSaved, onError }) {
+export default function VehiclesTab({ data, tiers, onSaved, onError }) {
   const [adding, setAdding] = useState(false);
   const vehicles = data?.vehicles || [];
   const canAdd   = data?.availableToAdd || [];
@@ -184,7 +226,7 @@ export default function VehiclesTab({ data, onSaved, onError }) {
       </div>
 
       {vehicles.map(v => (
-        <VehicleCard key={v.vehicle_type} row={v} onSaved={onSaved} onError={onError} />
+        <VehicleCard key={v.vehicle_type} row={v} tiers={tiers} onSaved={onSaved} onError={onError} />
       ))}
 
       <AddVehicleModal

@@ -120,10 +120,15 @@ export const VEHICLE_GROUPS = [
   },
   {
     title: 'Convenience fee',
-    help: 'The platform’s cut shown to the rider as a separate line. Stored per vehicle in its own table, edited here.',
+    help: 'The platform’s cut, shown to the rider as a separate line. It is derived '
+        + 'from the base fare — there is no separate rupee amount any more.',
+    preview: 'convenience',
     fields: [
-      { key: 'off_peak_base', label: 'Off-peak', type: 'number', unit: '₹', min: 0, max: 1000, step: 0.5, convenience: true },
-      { key: 'peak_base',     label: 'Peak',     type: 'number', unit: '₹', min: 0, max: 1000, step: 0.5, convenience: true },
+      { key: 'convenience_base_mult', label: 'Share of base fare', type: 'number', unit: '×',
+        min: 0, max: 2, step: 0.05,
+        help: '1.0 charges the whole base fare as the convenience fee; 0.5 charges half. '
+            + 'The distance band then multiplies it, and on long rides the percentage '
+            + 'from the Distance tab takes over if it is higher.' },
     ],
   },
   {
@@ -205,6 +210,9 @@ export const splitVehiclePatch = (patch) => {
 // `description` is in the backend schema but there is no such column in
 // pricing_distance_tiers, so it is deliberately not offered here.
 export const TIER_FIELDS = [
+  { key: 'convenience_pct', label: 'Convenience %', type: 'number', unit: '%', min: 0, max: 100, step: 0.5,
+    help: 'On this band the convenience fee can rise to this share of the ride fare. '
+        + 'Whichever is higher — this or the flat amount — is what the rider pays.' },
   { key: 'min_km',     label: 'From', type: 'number', unit: 'km', min: 0, max: 10000, step: 0.5 },
   { key: 'max_km',     label: 'To',   type: 'number', unit: 'km', min: 0, max: 10000, step: 0.5,
     nullable: true, help: 'Blank is the open-ended top band.' },
@@ -301,4 +309,61 @@ export const describeFailure = (result) => {
   return result.reason?.response?.data?.message
     || result.reason?.message
     || 'Could not load this section.';
+};
+
+// ─── Distance band multiplier ───────────────────────────────────────────────
+//
+// Ye multiplier SIRF convenience fee pe lagta hai — base fare aur distance fare
+// ko bilkul nahi chhoota. Poore backend me `getDistanceTierMultiplier` ek hi
+// jagah call hota hai: `calculateConvenienceFee`.
+//
+// Dashboard pe ye baat kahin likhi nahi thi, aur do alag tab pe do alag number
+// padey the (Vehicles me ₹15, Distance me 0.75) bina kisi connection ke — wahi
+// confusion ki jad thi.
+export const tierMultiplierFor = (km, tiers = []) => {
+  const active = (tiers || []).filter(t => t.is_active !== false);
+  for (const t of active) {
+    const min = num(t.min_km) ?? 0;
+    const max = num(t.max_km);
+    if (km >= min && (max === null || km < max)) return num(t.multiplier) ?? 1;
+  }
+  return 1;
+};
+
+/**
+ * Rider ko sach me kitni conv fee lagegi.
+ *
+ * Do hisse hain aur JO ZYADA ho wahi lagta hai:
+ *   flat  = base fare × share × distance band
+ *   pct   = us band ka percentage × ride fare
+ *
+ * Chhoti rides pe flat jeet‌ta hai, lambi rides pe percentage — aur switch har
+ * vehicle pe apne aap alag km pe hota hai (car ~24 km, bike ~11 km).
+ */
+export const conveniencePreview = (vehicle, tiers = [], distances = [2, 5, 15, 30, 100]) => {
+  const baseFare = num(vehicle?.base_fare);
+  const perKm    = num(vehicle?.per_km_rate);
+  const share    = num(vehicle?.convenience_base_mult) ?? 1;
+  if (baseFare === null) return [];
+
+  return distances.map(km => {
+    const mult = tierMultiplierFor(km, tiers);
+    const flat = Math.round(baseFare * share * mult * 100) / 100;
+    const pct  = tierPctFor(km, tiers);
+    const rideFare = perKm === null ? null : baseFare + km * perKm;
+    const pctFee = pct && rideFare !== null ? Math.round(rideFare * pct / 100 * 100) / 100 : 0;
+    const amount = Math.max(flat, pctFee);
+    return { km, multiplier: mult, flat, pct, pctFee, amount, byPct: pctFee > flat };
+  });
+};
+
+/** Is band ka convenience percentage (0 = sirf flat). */
+export const tierPctFor = (km, tiers = []) => {
+  const active = (tiers || []).filter(t => t.is_active !== false);
+  for (const t of active) {
+    const min = num(t.min_km) ?? 0;
+    const max = num(t.max_km);
+    if (km >= min && (max === null || km < max)) return num(t.convenience_pct) ?? 0;
+  }
+  return 0;
 };

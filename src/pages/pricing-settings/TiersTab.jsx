@@ -58,9 +58,10 @@ export default function TiersTab({ tiers, onSaved, onError }) {
   return (
     <div className="space-y-3">
       <Alert tone="info">
-        Distance bands multiply the whole fare. A ride is priced by the band its
-        distance falls in, so the bands must meet without a gap — a distance that
-        lands in no band gets no multiplier at all.
+        These bands multiply the <strong>convenience fee only</strong> — not the base fare
+        and not the per-km fare. A car&rsquo;s ₹15 off-peak fee becomes ₹11.25 on a 2 km ride
+        and ₹21 on a 30 km one. Bands must meet without a gap: a distance that lands in no
+        band gets no multiplier at all.
       </Alert>
 
       {rows.length === 0

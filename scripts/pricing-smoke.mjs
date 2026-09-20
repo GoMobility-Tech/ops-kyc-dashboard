@@ -68,7 +68,7 @@ const entry = `
   import {
     buildPatch, splitVehiclePatch, VEHICLE_FIELDS, TIER_FIELDS,
     GST_FIELDS, SUBSCRIBER_FIELDS, PENALTY_FIELDS, isOff, cacheWarning,
-    describeFailure,
+    describeFailure, conveniencePreview,
   } from '${root}/src/pages/pricing-settings/pricingMeta.js';
   import payload from '${root}/src/pages/pricing-settings/__fixtures__/pricingPayload.json';
 
@@ -238,17 +238,46 @@ const entry = `
       return 'ok';
     }],
 
-    ['patch: convenience fee is split into its own object', () => {
+    ['patch: convenience share goes flat, not nested', () => {
+      // Migration 130 ke baad conv fee base fare se nikalti hai, aur
+      // pricing_convenience_fee table fare engine padhta hi nahi. Us table
+      // ke do field screen se hat gaye; unki jagah convenience_base_mult
+      // hai, jo pricing_vehicle_config ka apna column hai — to wo FLAT
+      // jaata hai, convenience object ke andar nahi.
       const flat = buildPatch(
-        { base_fare: '60', off_peak_base: '9' },
-        { base_fare: '50.00', off_peak_base: '8.00' },
+        { base_fare: '60', convenience_base_mult: '0.6' },
+        { base_fare: '50.00', convenience_base_mult: '1.00' },
         VEHICLE_FIELDS);
       const body = splitVehiclePatch(flat);
       must(body.base_fare === 60, 'base_fare did not survive the split');
-      must(body.convenience && body.convenience.off_peak_base === 9,
-        'convenience was not nested: ' + JSON.stringify(body));
-      must(body.off_peak_base === undefined,
-        'convenience was left flat as well — the backend 400s on that');
+      must(body.convenience_base_mult === 0.6,
+        'the convenience share was dropped: ' + JSON.stringify(body));
+      must(body.convenience === undefined,
+        'nothing should be nested any more: ' + JSON.stringify(body));
+      return 'ok';
+    }],
+
+    ['convenience preview uses base fare, not a separate amount', () => {
+      // Wo ₹15 / ₹40 wale field hat chuke hain. Preview ab base fare se
+      // banta hai, warna screen wahi purana jhoot bolti rehti.
+      const tiers = [
+        { min_km: 0,  max_km: 3,    multiplier: 0.75, convenience_pct: 25, is_active: true },
+        { min_km: 3,  max_km: 10,   multiplier: 1,    convenience_pct: 25, is_active: true },
+        { min_km: 10, max_km: 20,   multiplier: 1.2,  convenience_pct: 25, is_active: true },
+        { min_km: 20, max_km: null, multiplier: 1.4,  convenience_pct: 25, is_active: true },
+      ];
+      const car = { base_fare: '80.00', per_km_rate: '15.00', convenience_base_mult: '1.00' };
+      const rows = conveniencePreview(car, tiers, [2, 5, 100]);
+
+      must(rows[0].amount === 60,  '2 km should be 80 × 0.75 = 60, got ' + rows[0].amount);
+      must(rows[1].amount === 80,  '5 km should be 80 × 1.0 = 80, got ' + rows[1].amount);
+      // 100 km pe percentage flat se bada ho jaata hai — wahi lagna chahiye
+      must(rows[2].byPct, '100 km should switch to the percentage');
+      must(rows[2].amount === 395, '100 km should be 25% of ₹1580 = ₹395, got ' + rows[2].amount);
+
+      // Aadha share karne pe chhoti rides aadhi ho jaati hain
+      const half = conveniencePreview({ ...car, convenience_base_mult: '0.50' }, tiers, [5]);
+      must(half[0].amount === 40, 'half share should give ₹40, got ' + half[0].amount);
       return 'ok';
     }],
 
@@ -263,8 +292,11 @@ const entry = `
           'traffic_grace_minutes','traffic_rate_per_min','night_multiplier','max_pickup_radius_km',
           'wait_charge_cap','auto_cancel_minutes','surge_cap','vehicle_class','max_vehicle_age_years',
           'min_engine_cc','ac_required','category_notes','is_active','sort_order',
+          'convenience_base_mult',
+          // pricing_convenience_fee ab fare engine nahi padhta, par backend
+          // schema me field abhi hai taaki purane clients 400 na khayein.
           'off_peak_base','peak_base'],
-        tier: ['min_km','max_km','multiplier','is_active','sort_order','description'],
+        tier: ['min_km','max_km','multiplier','convenience_pct','is_active','sort_order','description'],
         subscriber: ['free_km','discount_pct_beyond','surge_cap','monthly_price','free_rides_per_day',
           'free_rides_per_month','surge_protection_rides','display_label','is_active'],
         gst: ['gst_enabled','rider_rate_pct','platform_rate_pct','conv_fee_gst_pct','subscription_gst_pct',

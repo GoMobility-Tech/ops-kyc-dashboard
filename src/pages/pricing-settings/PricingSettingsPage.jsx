@@ -192,7 +192,7 @@ export default function PricingSettingsPage() {
       ) : (
         <>
           {tab === 'vehicles' && (
-            <VehiclesTab data={data?.vehicles} onSaved={onSaved} onError={onError} />
+            <VehiclesTab data={data?.vehicles} tiers={data?.tiers} onSaved={onSaved} onError={onError} />
           )}
           {tab === 'settings' && (
             <SettingsTab
