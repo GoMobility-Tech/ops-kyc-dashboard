@@ -29,6 +29,14 @@ export const fmtKm = (v) => {
   return n == null ? '—' : `${n.toFixed(1)} km`;
 };
 
+// Trip duration in minutes → "Nm" or "Xh Ym". null → em dash.
+export const fmtMins = (v) => {
+  const n = num(v);
+  if (n == null) return '—';
+  if (n < 60) return `${Math.round(n)}m`;
+  return `${Math.floor(n / 60)}h ${Math.round(n % 60)}m`;
+};
+
 export const fmtRupees = (v) => {
   const n = num(v);
   return n == null ? '—' : `₹${n.toFixed(2)}`;

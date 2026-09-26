@@ -10,7 +10,7 @@ import {
 } from '../../components/ui';
 import OfferTimeline, { CallList } from './OfferTimeline.jsx';
 import {
-  num, fmtKm, fmtWait, fmtRupees, fmtTime, waitTone, waitLabel, isSearching,
+  num, fmtKm, fmtMins, fmtWait, fmtRupees, fmtTime, waitTone, waitLabel, isSearching,
   telHref, pendingOffers,
 } from './dispatchMeta.js';
 
@@ -147,6 +147,8 @@ export default function RideDispatchPage() {
             )}
           </div>
           <Field label="Estimated fare" value={fmtRupees(ride.estimated_fare)} />
+          <Field label="Distance" value={fmtKm(ride.distance_km)} />
+          <Field label="Duration" value={fmtMins(ride.duration_minutes)} />
           <div className="lg:col-span-2 space-y-1.5">
             <p className="text-xs text-ink leading-snug">
               <span className="text-green-700 font-bold">●</span> {ride.pickup_address || '—'}
