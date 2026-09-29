@@ -97,6 +97,23 @@ function TicketModal({ id, onClose, onChanged }) {
   const [lightbox, setLightbox] = useState({ images: [], index: -1 });
   const fileInputRef = useRef(null);
 
+  // Status/priority/remark are edited as a DRAFT — nothing is sent to the
+  // server until "Save changes" is clicked. A dropdown misclick used to fire
+  // an instant PATCH (e.g. accidentally closing a ticket); now it only
+  // changes local state, and closing/resolving additionally requires a
+  // remark + an explicit confirm.
+  const [draft, setDraft] = useState({ status: '', priority: '', notes: '' });
+  useEffect(() => {
+    if (ticket) setDraft({ status: ticket.status, priority: ticket.priority, notes: ticket.resolution_notes || '' });
+  }, [ticket?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const isDirty = ticket && (
+    draft.status !== ticket.status ||
+    draft.priority !== ticket.priority ||
+    draft.notes !== (ticket.resolution_notes || '')
+  );
+  const isClosingOut = ticket && draft.status !== ticket.status && ['resolved', 'closed'].includes(draft.status);
+
   // All image attachments across ticket + messages, in display order — the
   // lightbox indexes into this flat list regardless of which strip was clicked.
   const allImages = [
@@ -124,10 +141,24 @@ function TicketModal({ id, onClose, onChanged }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const patch = async (field, value) => {
-    setSavingField(field);
+  const saveChanges = async () => {
+    if (!isDirty) return;
+    if (isClosingOut && !draft.notes.trim()) {
+      setError(`Add a remark before marking this ticket ${STATUS_META[draft.status].label}.`);
+      return;
+    }
+    if (isClosingOut) {
+      const label = STATUS_META[draft.status].label;
+      if (!window.confirm(`Mark this ticket as "${label}"? Make sure the remark is accurate — this is shown in reports.`)) return;
+    }
+    setSavingField('changes');
+    setError('');
     try {
-      await updateSupportTicket(id, { [field]: value });
+      await updateSupportTicket(id, {
+        status: draft.status,
+        priority: draft.priority,
+        resolution_notes: draft.notes,
+      });
       await load();
       onChanged?.();
     } catch (e) {
@@ -198,15 +229,45 @@ function TicketModal({ id, onClose, onChanged }) {
             </div>
           </Card>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Select label="Status" size="sm" value={ticket.status}
-              onChange={(v) => patch('status', v)}
-              options={Object.entries(STATUS_META).map(([value, m]) => ({ value, label: m.label }))} />
-            <Select label="Priority" size="sm" value={ticket.priority}
-              onChange={(v) => patch('priority', v)}
-              options={Object.entries(PRIORITY_META).map(([value, m]) => ({ value, label: m.label }))} />
-          </div>
-          {savingField && <p className="text-[11px] text-ink-faint -mt-2">Saving {savingField}…</p>}
+          <Card padding="sm" className="space-y-2.5">
+            <div className="grid grid-cols-2 gap-3">
+              <Select label="Status" size="sm" value={draft.status}
+                onChange={(v) => setDraft(d => ({ ...d, status: v }))}
+                options={Object.entries(STATUS_META).map(([value, m]) => ({ value, label: m.label }))} />
+              <Select label="Priority" size="sm" value={draft.priority}
+                onChange={(v) => setDraft(d => ({ ...d, priority: v }))}
+                options={Object.entries(PRIORITY_META).map(([value, m]) => ({ value, label: m.label }))} />
+            </div>
+
+            {(isClosingOut || draft.notes) && (
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider text-ink-muted font-semibold mb-1">
+                  Remark {isClosingOut && <span className="text-red-600">— required to {STATUS_META[draft.status].label.toLowerCase()}</span>}
+                </label>
+                <textarea
+                  value={draft.notes}
+                  onChange={(e) => setDraft(d => ({ ...d, notes: e.target.value }))}
+                  placeholder="What was done / resolution summary…"
+                  rows={2}
+                  className={`w-full bg-white rounded-lg px-3 py-2 border text-xs text-ink outline-none resize-none
+                    ${isClosingOut && !draft.notes.trim() ? 'border-red-400' : 'border-line focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20'}`}
+                />
+              </div>
+            )}
+
+            {isDirty && (
+              <div className="flex items-center justify-end gap-2">
+                <Button variant="outline" size="sm"
+                  onClick={() => setDraft({ status: ticket.status, priority: ticket.priority, notes: ticket.resolution_notes || '' })}>
+                  Discard
+                </Button>
+                <Button variant={isClosingOut ? 'danger' : 'primary'} size="sm"
+                  loading={savingField === 'changes'} onClick={saveChanges}>
+                  {isClosingOut ? `Mark ${STATUS_META[draft.status].label}` : 'Save changes'}
+                </Button>
+              </div>
+            )}
+          </Card>
 
           <div>
             <p className="text-[10px] uppercase tracking-wider text-ink-muted font-semibold mb-2">Conversation</p>
