@@ -3,6 +3,7 @@ import {
   Search, Settings, LayoutDashboard, ClipboardList, Landmark, Car, IdCard,
   AlertTriangle, CheckCircle2, LogOut, CreditCard, List, Receipt,
   MapPin, Activity, Gauge, BarChart3, Radio, SlidersHorizontal, Download,
+  MessageCircle,
 } from 'lucide-react';
 
 // Maps backend-provided icon string keys to lucide-react components.
@@ -35,6 +36,7 @@ const map = {
   'radio':           Radio,
   'sliders':         SlidersHorizontal,
   'download':        Download,
+  'message-circle':  MessageCircle,
 };
 
 export const getIcon = (key) => map[key] || LayoutDashboard;
