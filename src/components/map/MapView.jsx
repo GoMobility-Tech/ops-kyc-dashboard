@@ -15,7 +15,7 @@ import 'leaflet/dist/leaflet.css';
  *
  *   markers  [{ id, lat, lng, colour, faded, selected, tooltip,
  *               html?, iconSize?, iconAnchor?, tooltipAnchor? }]
- *   segments [{ points: [[lat,lng]…], colour, dashed }]  — location trail
+ *   segments [{ points: [[lat,lng]…], colour }]  — location trail (solid, colour-coded)
  */
 export default function MapView({
   markers = [],
@@ -118,11 +118,18 @@ export default function MapView({
 
     segments.forEach(s => {
       if (!s.points || s.points.length < 2) return;
+      // A white casing under the line keeps it legible over any tile colour
+      // (road fill, park green, water blue). Both duty states render as solid
+      // lines — colour alone tells them apart, dashes were hard to read.
+      L.polyline(s.points, {
+        color: '#ffffff',
+        weight: 7,
+        opacity: 0.9,
+      }).addTo(layer);
       L.polyline(s.points, {
         color: s.colour,
-        weight: s.dashed ? 2 : 3,
-        opacity: s.dashed ? 0.6 : 0.9,
-        dashArray: s.dashed ? '6 6' : undefined,
+        weight: 5,
+        opacity: 1,
       }).addTo(layer);
     });
   }, [segments]);
