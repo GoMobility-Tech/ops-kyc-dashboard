@@ -1,9 +1,9 @@
 {
   "bike": {
-    "generatedAt": "2026-10-06T09:13:56.629Z",
+    "generatedAt": "2026-10-06T10:30:47.691Z",
     "currency": "INR",
     "zone": null,
-    "configVersion": "8a603688",
+    "configVersion": "f6108e17",
     "tabs": [
       {
         "vehicleType": "bike",
@@ -176,7 +176,36 @@
                   "display": "₹10 per km",
                   "amount": 10
                 }
-              }
+              },
+              "slabs": [
+                {
+                  "fromKm": 0,
+                  "toKm": 10,
+                  "display": "0 to 10 km",
+                  "rate": {
+                    "display": "₹8 per km",
+                    "amount": 8
+                  }
+                },
+                {
+                  "fromKm": 10,
+                  "toKm": 20,
+                  "display": "10 to 20 km",
+                  "rate": {
+                    "display": "₹9 per km",
+                    "amount": 9
+                  }
+                },
+                {
+                  "fromKm": 20,
+                  "toKm": null,
+                  "display": "20 km and above",
+                  "rate": {
+                    "display": "₹10 per km",
+                    "amount": 10
+                  }
+                }
+              ]
             },
             {
               "key": "min_fare",
@@ -393,10 +422,10 @@
     }
   },
   "car": {
-    "generatedAt": "2026-10-06T09:13:56.634Z",
+    "generatedAt": "2026-10-06T10:30:47.694Z",
     "currency": "INR",
     "zone": null,
-    "configVersion": "c91f8f23",
+    "configVersion": "05dfcff2",
     "tabs": [
       {
         "vehicleType": "bike",
@@ -569,7 +598,36 @@
                   "display": "₹18.75 per km",
                   "amount": 18.75
                 }
-              }
+              },
+              "slabs": [
+                {
+                  "fromKm": 0,
+                  "toKm": 10,
+                  "display": "0 to 10 km",
+                  "rate": {
+                    "display": "₹15 per km",
+                    "amount": 15
+                  }
+                },
+                {
+                  "fromKm": 10,
+                  "toKm": 20,
+                  "display": "10 to 20 km",
+                  "rate": {
+                    "display": "₹16 per km",
+                    "amount": 16
+                  }
+                },
+                {
+                  "fromKm": 20,
+                  "toKm": null,
+                  "display": "20 km and above",
+                  "rate": {
+                    "display": "₹17 per km",
+                    "amount": 17
+                  }
+                }
+              ]
             },
             {
               "key": "min_fare",
@@ -759,25 +817,25 @@
           "distanceKm": 20,
           "bands": {
             "off_peak": {
-              "rideFare": 340,
+              "rideFare": 350,
               "minimumFareApplied": false,
               "platformFee": 5,
               "gstOnPlatformFee": 0.9,
-              "youEarn": 334.1
+              "youEarn": 344.1
             },
             "peak": {
-              "rideFare": 380,
+              "rideFare": 390,
               "minimumFareApplied": false,
               "platformFee": 5,
               "gstOnPlatformFee": 0.9,
-              "youEarn": 374.1
+              "youEarn": 384.1
             },
             "night": {
-              "rideFare": 475,
+              "rideFare": 487.5,
               "minimumFareApplied": false,
               "platformFee": 5,
               "gstOnPlatformFee": 0.9,
-              "youEarn": 469.1
+              "youEarn": 481.6
             }
           }
         }

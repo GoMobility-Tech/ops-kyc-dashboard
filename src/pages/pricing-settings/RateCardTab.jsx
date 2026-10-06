@@ -32,44 +32,56 @@ const SECTION_TONE = {
 const money = (n) => `₹${Number(n).toFixed(2).replace(/\.00$/, '')}`;
 const windowsText = (ws = []) => ws.map(w => `${w.from}–${w.to}`).join(', ');
 
-// ─── One row, as the driver sees it ─────────────────────────────────────────
+// ─── The driver's card (left pane) ──────────────────────────────────────────
+//
+// Built to be read, not decoded: the driver's own earning comes first, then the
+// rates for the band that is active NOW, in large type. The other bands are one
+// small grey line under it. Uses only fields the API contract already has
+// (`now`, `examples[].youEarn`, rows' `value` / `perBand` / `slabs`).
+const bandWord = (bands, k) => bands.find(b => b.key === k)?.label || k;
+
+// Value shown big = the active band's; the rest become "Peak ₹20 · Night ₹25".
+function bandSplit(row, nowBand, bands) {
+  const keys = bands.map(b => b.key).filter(k => row.perBand?.[k]);
+  const mainKey = row.perBand?.[nowBand] ? nowBand : keys[0];
+  const main = row.perBand?.[mainKey]?.display ?? row.value?.display;
+  const others = keys.filter(k => k !== mainKey);
+  const same = others.length > 0 && others.every(k => row.perBand[k].display === main);
+  return {
+    main,
+    note: row.perBand?.[mainKey]?.note,
+    others: same ? [] : others.map(k => `${bandWord(bands, k)} ${row.perBand[k].display}`),
+    allSame: same,
+  };
+}
+
 function Row({ row, nowBand, bands }) {
-  const keys = row.perBand ? bands.map(b => b.key).filter(k => row.perBand[k]) : [];
+  const split = row.perBand ? bandSplit(row, nowBand, bands) : null;
   return (
-    <div className="px-3 py-2.5 border-t border-line first:border-t-0">
+    <div className="px-3.5 py-2.5 border-t border-line first:border-t-0">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[13px] font-semibold text-ink leading-snug">{row.title}</p>
           {row.subtitle && <p className="text-[11px] text-ink-muted mt-0.5 leading-snug">{row.subtitle}</p>}
         </div>
-        {!row.perBand && (
-          <p className="text-[13px] font-bold text-brand-800 whitespace-nowrap text-right">{row.value?.display}</p>
-        )}
+        <div className="text-right shrink-0">
+          <p className="text-[14px] font-bold text-ink whitespace-nowrap">
+            {split ? split.main : row.value?.display}
+          </p>
+          {split?.note && <p className="text-[10px] text-ink-muted leading-tight">{split.note}</p>}
+        </div>
       </div>
 
-      {row.perBand && (
-        <div className="mt-2 grid gap-1.5" style={{ gridTemplateColumns: `repeat(${keys.length}, minmax(0, 1fr))` }}>
-          {keys.map((k) => {
-            const b = bands.find(x => x.key === k);
-            const active = k === nowBand;
-            return (
-              <div key={k}
-                   className={`rounded-lg border px-2 py-1.5 text-center
-                     ${active ? 'border-brand-600 bg-brand-100' : 'border-line bg-white'}`}>
-                <p className="text-[10px] uppercase tracking-wide text-ink-muted font-semibold">{b?.label || k}</p>
-                <p className="text-[13px] font-bold text-ink mt-0.5">{row.perBand[k].display}</p>
-              </div>
-            );
-          })}
-        </div>
+      {split && split.others.length > 0 && (
+        <p className="text-[11px] text-ink-faint mt-1 text-right">{split.others.join('  ·  ')}</p>
       )}
 
       {row.slabs && (
-        <div className="mt-2 rounded-lg border border-line bg-white divide-y divide-line">
-          {row.slabs.map((s) => (
-            <div key={s.display} className="flex justify-between px-2.5 py-1.5 text-[12px]">
-              <span className="text-ink-muted">{s.display}</span>
-              <span className="font-semibold text-ink">{s.rate.display}</span>
+        <div className="mt-2 rounded-lg bg-surface-alt px-2.5 py-1.5 space-y-1">
+          {row.slabs.map((sl) => (
+            <div key={sl.display} className="flex items-center justify-between text-[12px]">
+              <span className="text-ink-muted">{sl.display}</span>
+              <span className="font-semibold text-ink">{sl.rate.display}</span>
             </div>
           ))}
         </div>
@@ -78,23 +90,57 @@ function Row({ row, nowBand, bands }) {
   );
 }
 
-// ─── The card (left pane) ───────────────────────────────────────────────────
+// ─── "What you earn" — first thing the driver sees ───────────────────────────
+function Earnings({ card }) {
+  const nowBand = card.now?.band;
+  const bands = card.bands;
+  if (!card.examples?.length) return null;
+  const mainKey = card.examples[0].bands[nowBand] ? nowBand : Object.keys(card.examples[0].bands)[0];
+  return (
+    <div className="bg-green-50 border-b border-green-200 px-3.5 py-3">
+      <p className="text-[11px] uppercase tracking-wider font-bold text-green-800">What you earn</p>
+      <p className="text-[11px] text-green-800/80 mb-2">After platform fee and GST · {bandWord(bands, mainKey)} rates</p>
+      <div className="space-y-1.5">
+        {card.examples.map((e) => {
+          const x = e.bands[mainKey];
+          const others = Object.keys(e.bands).filter(k => k !== mainKey)
+            .map(k => `${bandWord(bands, k)} ${money(e.bands[k].youEarn)}`);
+          return (
+            <div key={e.distanceKm} className="flex items-baseline justify-between gap-3">
+              <span className="text-[13px] font-semibold text-ink">{e.distanceKm} km ride</span>
+              <span className="text-right">
+                <span className="text-[16px] font-extrabold text-ink tabular-nums">{money(x.youEarn)}</span>
+                {x.minimumFareApplied && <span className="text-amber-700 font-bold" title="Minimum fare applied"> *</span>}
+                <span className="block text-[10px] text-ink-faint">{others.join('  ·  ')}</span>
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-[10px] text-green-800/70 mt-2 leading-snug">
+        <b>*</b> Minimum fare applied. {card.disclaimer}
+      </p>
+    </div>
+  );
+}
+
 function DriverCard({ card }) {
   const nowBand = card.now?.band;
   return (
     <div>
-      <div className="px-3 py-2 bg-accent-navy text-white rounded-t-xl">
+      <div className="px-3.5 py-2.5 bg-accent-navy text-white rounded-t-xl">
         <p className="text-[10px] uppercase tracking-wider text-brand-400 font-semibold">Rate Card</p>
         <p className="text-sm font-bold">
           {card.now?.label || '—'} now{card.now?.until ? <span className="font-normal opacity-80"> · until {card.now.until}</span> : null}
         </p>
       </div>
+      <Earnings card={card} />
       {card.categoryNotes && (
-        <p className="px-3 py-1.5 text-[11px] bg-amber-50 text-amber-800 border-b border-amber-200">{card.categoryNotes}</p>
+        <p className="px-3.5 py-1.5 text-[11px] bg-amber-50 text-amber-800 border-b border-amber-200">{card.categoryNotes}</p>
       )}
       {card.sections.map((s) => (
         <div key={s.key}>
-          <div className={`px-3 py-1.5 text-[12px] font-bold border-y ${SECTION_TONE[s.tone] || SECTION_TONE.green}`}>
+          <div className={`px-3.5 py-1.5 text-[12px] font-bold border-y ${SECTION_TONE[s.tone] || SECTION_TONE.green}`}>
             {s.title}
           </div>
           {s.rows.map((r) => <Row key={r.key} row={r} nowBand={nowBand} bands={card.bands} />)}
