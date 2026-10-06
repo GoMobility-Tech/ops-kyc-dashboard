@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Car, SlidersHorizontal, Receipt, Ruler, BadgeCheck, ShieldAlert, History,
-  RefreshCw, Server, CheckCircle2,
+  RefreshCw, Server, CheckCircle2, IdCard,
 } from 'lucide-react';
 import { Tabs, Alert, Spinner, Button, Badge } from '../../components/ui';
 import {
@@ -18,6 +18,7 @@ import TiersTab       from './TiersTab.jsx';
 import SubscribersTab from './SubscribersTab.jsx';
 import PenaltiesTab   from './PenaltiesTab.jsx';
 import AuditTab       from './AuditTab.jsx';
+import RateCardTab    from './RateCardTab.jsx';
 
 // ─── Pricing Settings ───────────────────────────────────────────────────────
 //
@@ -43,6 +44,7 @@ const TABS = [
   { value: 'tiers',       label: 'Distance',   icon: Ruler },
   { value: 'subscribers', label: 'GO Pass',    icon: BadgeCheck },
   { value: 'penalties',   label: 'Penalties',  icon: ShieldAlert },
+  { value: 'ratecard',    label: 'Rate Card',  icon: IdCard },
   { value: 'audit',       label: 'History',    icon: History },
 ];
 
@@ -215,6 +217,7 @@ export default function PricingSettingsPage() {
               onDeleted={onSaved}
             />
           )}
+          {tab === 'ratecard' && <RateCardTab />}
           {tab === 'audit' && <AuditTab />}
         </>
       )}

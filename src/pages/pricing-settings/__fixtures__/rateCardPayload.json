@@ -1,0 +1,788 @@
+{
+  "bike": {
+    "generatedAt": "2026-10-06T09:13:56.629Z",
+    "currency": "INR",
+    "zone": null,
+    "configVersion": "8a603688",
+    "tabs": [
+      {
+        "vehicleType": "bike",
+        "displayName": "Bike",
+        "vehicleClass": "two_wheel",
+        "isDriverVehicle": false,
+        "disabled": false
+      },
+      {
+        "vehicleType": "auto",
+        "displayName": "Auto",
+        "vehicleClass": "three_wheel",
+        "isDriverVehicle": false,
+        "disabled": false
+      },
+      {
+        "vehicleType": "car",
+        "displayName": "Car",
+        "vehicleClass": "car_side",
+        "isDriverVehicle": false,
+        "disabled": false
+      },
+      {
+        "vehicleType": "xl",
+        "displayName": "XL",
+        "vehicleClass": "car_side",
+        "isDriverVehicle": false,
+        "disabled": false
+      },
+      {
+        "vehicleType": "premium",
+        "displayName": "Premium",
+        "vehicleClass": "car_side",
+        "isDriverVehicle": false,
+        "disabled": false
+      },
+      {
+        "vehicleType": "luxury",
+        "displayName": "Luxury",
+        "vehicleClass": "car_side",
+        "isDriverVehicle": false,
+        "disabled": false
+      }
+    ],
+    "selected": "bike",
+    "card": {
+      "vehicleType": "bike",
+      "categoryNotes": "Two-wheeler",
+      "now": {
+        "band": "off_peak",
+        "label": "Off-peak",
+        "until": "17:00"
+      },
+      "bands": [
+        {
+          "key": "off_peak",
+          "label": "Off-peak",
+          "windows": [
+            {
+              "from": "05:00",
+              "to": "08:00"
+            },
+            {
+              "from": "10:00",
+              "to": "17:00"
+            },
+            {
+              "from": "20:00",
+              "to": "23:00"
+            }
+          ],
+          "days": null,
+          "baseFare": {
+            "discountPct": 50
+          },
+          "summary": "Half base fare",
+          "note": "Base fare can be the full amount during high demand."
+        },
+        {
+          "key": "peak",
+          "label": "Peak",
+          "windows": [
+            {
+              "from": "08:00",
+              "to": "10:00"
+            },
+            {
+              "from": "17:00",
+              "to": "20:00"
+            }
+          ],
+          "days": null,
+          "baseFare": {
+            "discountPct": 0
+          },
+          "summary": "Full base fare",
+          "note": "Also applies during high demand or bad weather."
+        },
+        {
+          "key": "night",
+          "label": "Night",
+          "windows": [
+            {
+              "from": "23:00",
+              "to": "05:00"
+            }
+          ],
+          "days": null,
+          "baseFare": {
+            "discountPct": 0,
+            "multiplierPct": 25
+          },
+          "summary": "Full base fare + 25%",
+          "note": "+25% on base fare, distance fare and minimum fare."
+        }
+      ],
+      "sections": [
+        {
+          "key": "order_fare",
+          "title": "Order Fare",
+          "tone": "green",
+          "rows": [
+            {
+              "key": "base_fare",
+              "title": "Base Fare",
+              "subtitle": "For completing an order",
+              "value": {
+                "type": "amount",
+                "display": "₹20",
+                "amount": 20
+              },
+              "perBand": {
+                "off_peak": {
+                  "display": "₹10",
+                  "amount": 10,
+                  "note": "Half base fare"
+                },
+                "peak": {
+                  "display": "₹20",
+                  "amount": 20,
+                  "note": "Full base fare"
+                },
+                "night": {
+                  "display": "₹25",
+                  "amount": 25,
+                  "note": "Full base fare + 25%"
+                }
+              }
+            },
+            {
+              "key": "per_km",
+              "title": "Distance Fare",
+              "subtitle": "For the kilometers travelled",
+              "value": {
+                "type": "rate",
+                "display": "₹8 per km",
+                "amount": 8,
+                "unit": "km"
+              },
+              "perBand": {
+                "off_peak": {
+                  "display": "₹8 per km",
+                  "amount": 8
+                },
+                "peak": {
+                  "display": "₹8 per km",
+                  "amount": 8
+                },
+                "night": {
+                  "display": "₹10 per km",
+                  "amount": 10
+                }
+              }
+            },
+            {
+              "key": "min_fare",
+              "title": "Minimum Fare",
+              "subtitle": "Lowest fare for a ride",
+              "value": {
+                "type": "amount",
+                "display": "₹35",
+                "amount": 35
+              },
+              "perBand": {
+                "off_peak": {
+                  "display": "₹35",
+                  "amount": 35
+                },
+                "peak": {
+                  "display": "₹35",
+                  "amount": 35
+                },
+                "night": {
+                  "display": "₹43.75",
+                  "amount": 43.75
+                }
+              }
+            },
+            {
+              "key": "waiting",
+              "title": "Wait Time charges",
+              "subtitle": "After 7 min",
+              "value": {
+                "type": "rate",
+                "display": "+ ₹1 per min",
+                "amount": 1,
+                "unit": "min"
+              },
+              "meta": {
+                "graceMinutes": 7,
+                "cap": null
+              }
+            }
+          ]
+        },
+        {
+          "key": "extra_fare",
+          "title": "Extra Fare (not applicable on all orders)",
+          "tone": "teal",
+          "rows": [
+            {
+              "key": "long_pickup",
+              "title": "Long Pickup Fare per km",
+              "subtitle": "After 2.5 km",
+              "value": {
+                "type": "rate",
+                "display": "+ ₹1.25 per km",
+                "amount": 1.25,
+                "unit": "km"
+              },
+              "meta": {
+                "freeKm": 2.5,
+                "cap": null
+              }
+            },
+            {
+              "key": "traffic_delay",
+              "title": "Traffic Delay",
+              "subtitle": "After 30 min over the estimate",
+              "value": {
+                "type": "rate",
+                "display": "+ ₹0.50 per min",
+                "amount": 0.5,
+                "unit": "min"
+              }
+            },
+            {
+              "key": "cancellation",
+              "title": "Cancellation Fare",
+              "subtitle": "When the customer cancels and you are within 300 m of pickup",
+              "value": {
+                "type": "range",
+                "display": "+ ₹0 to ₹80",
+                "min": 0,
+                "max": 80
+              },
+              "meta": {
+                "driverSharePct": 80,
+                "penaltyPctOfFare": 10,
+                "penaltyMax": 100,
+                "withinMeters": 300
+              }
+            },
+            {
+              "key": "surge",
+              "title": "Surge Fare",
+              "subtitle": "Extra fare paid by customer, goes to your earning",
+              "value": {
+                "type": "text",
+                "display": "Up to 1.75x"
+              }
+            }
+          ]
+        },
+        {
+          "key": "commission_gst",
+          "title": "Commission and GST",
+          "tone": "yellow",
+          "rows": [
+            {
+              "key": "platform_fee",
+              "title": "Platform Fee",
+              "subtitle": "Per ride, for the first 10 rides of the day",
+              "value": {
+                "type": "amount",
+                "display": "₹1 per ride",
+                "amount": 1
+              },
+              "meta": {
+                "dailyCapRides": 10
+              }
+            },
+            {
+              "key": "gst_on_platform",
+              "title": "GST on Platform Fee",
+              "subtitle": "Paid to Government",
+              "value": {
+                "type": "percent",
+                "display": "18%",
+                "amount": 18
+              }
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "distanceKm": 2,
+          "bands": {
+            "off_peak": {
+              "rideFare": 35,
+              "minimumFareApplied": true,
+              "platformFee": 1,
+              "gstOnPlatformFee": 0.18,
+              "youEarn": 33.82
+            },
+            "peak": {
+              "rideFare": 36,
+              "minimumFareApplied": false,
+              "platformFee": 1,
+              "gstOnPlatformFee": 0.18,
+              "youEarn": 34.82
+            },
+            "night": {
+              "rideFare": 45,
+              "minimumFareApplied": false,
+              "platformFee": 1,
+              "gstOnPlatformFee": 0.18,
+              "youEarn": 43.82
+            }
+          }
+        },
+        {
+          "distanceKm": 5,
+          "bands": {
+            "off_peak": {
+              "rideFare": 50,
+              "minimumFareApplied": false,
+              "platformFee": 1,
+              "gstOnPlatformFee": 0.18,
+              "youEarn": 48.82
+            },
+            "peak": {
+              "rideFare": 60,
+              "minimumFareApplied": false,
+              "platformFee": 1,
+              "gstOnPlatformFee": 0.18,
+              "youEarn": 58.82
+            },
+            "night": {
+              "rideFare": 75,
+              "minimumFareApplied": false,
+              "platformFee": 1,
+              "gstOnPlatformFee": 0.18,
+              "youEarn": 73.82
+            }
+          }
+        },
+        {
+          "distanceKm": 10,
+          "bands": {
+            "off_peak": {
+              "rideFare": 90,
+              "minimumFareApplied": false,
+              "platformFee": 1,
+              "gstOnPlatformFee": 0.18,
+              "youEarn": 88.82
+            },
+            "peak": {
+              "rideFare": 100,
+              "minimumFareApplied": false,
+              "platformFee": 1,
+              "gstOnPlatformFee": 0.18,
+              "youEarn": 98.82
+            },
+            "night": {
+              "rideFare": 125,
+              "minimumFareApplied": false,
+              "platformFee": 1,
+              "gstOnPlatformFee": 0.18,
+              "youEarn": 123.82
+            }
+          }
+        }
+      ],
+      "disclaimer": "Examples exclude surge, waiting, pickup and traffic compensation and coupons. Platform fee applies to the first 10 rides of the day."
+    }
+  },
+  "car": {
+    "generatedAt": "2026-10-06T09:13:56.634Z",
+    "currency": "INR",
+    "zone": null,
+    "configVersion": "c91f8f23",
+    "tabs": [
+      {
+        "vehicleType": "bike",
+        "displayName": "Bike",
+        "vehicleClass": "two_wheel",
+        "isDriverVehicle": false,
+        "disabled": false
+      },
+      {
+        "vehicleType": "auto",
+        "displayName": "Auto",
+        "vehicleClass": "three_wheel",
+        "isDriverVehicle": false,
+        "disabled": false
+      },
+      {
+        "vehicleType": "car",
+        "displayName": "Car",
+        "vehicleClass": "car_side",
+        "isDriverVehicle": false,
+        "disabled": false
+      },
+      {
+        "vehicleType": "xl",
+        "displayName": "XL",
+        "vehicleClass": "car_side",
+        "isDriverVehicle": false,
+        "disabled": false
+      },
+      {
+        "vehicleType": "premium",
+        "displayName": "Premium",
+        "vehicleClass": "car_side",
+        "isDriverVehicle": false,
+        "disabled": false
+      },
+      {
+        "vehicleType": "luxury",
+        "displayName": "Luxury",
+        "vehicleClass": "car_side",
+        "isDriverVehicle": false,
+        "disabled": false
+      }
+    ],
+    "selected": "car",
+    "card": {
+      "vehicleType": "car",
+      "categoryNotes": "4-door sedan or hatchback",
+      "now": {
+        "band": "off_peak",
+        "label": "Off-peak",
+        "until": "17:00"
+      },
+      "bands": [
+        {
+          "key": "off_peak",
+          "label": "Off-peak",
+          "windows": [
+            {
+              "from": "05:00",
+              "to": "08:00"
+            },
+            {
+              "from": "10:00",
+              "to": "17:00"
+            },
+            {
+              "from": "20:00",
+              "to": "23:00"
+            }
+          ],
+          "days": null,
+          "baseFare": {
+            "discountPct": 50
+          },
+          "summary": "Half base fare",
+          "note": "Base fare can be the full amount during high demand."
+        },
+        {
+          "key": "peak",
+          "label": "Peak",
+          "windows": [
+            {
+              "from": "08:00",
+              "to": "10:00"
+            },
+            {
+              "from": "17:00",
+              "to": "20:00"
+            }
+          ],
+          "days": null,
+          "baseFare": {
+            "discountPct": 0
+          },
+          "summary": "Full base fare",
+          "note": "Also applies during high demand or bad weather."
+        },
+        {
+          "key": "night",
+          "label": "Night",
+          "windows": [
+            {
+              "from": "23:00",
+              "to": "05:00"
+            }
+          ],
+          "days": null,
+          "baseFare": {
+            "discountPct": 0,
+            "multiplierPct": 25
+          },
+          "summary": "Full base fare + 25%",
+          "note": "+25% on base fare, distance fare and minimum fare."
+        }
+      ],
+      "sections": [
+        {
+          "key": "order_fare",
+          "title": "Order Fare",
+          "tone": "green",
+          "rows": [
+            {
+              "key": "base_fare",
+              "title": "Base Fare",
+              "subtitle": "For completing an order",
+              "value": {
+                "type": "amount",
+                "display": "₹80",
+                "amount": 80
+              },
+              "perBand": {
+                "off_peak": {
+                  "display": "₹40",
+                  "amount": 40,
+                  "note": "Half base fare"
+                },
+                "peak": {
+                  "display": "₹80",
+                  "amount": 80,
+                  "note": "Full base fare"
+                },
+                "night": {
+                  "display": "₹100",
+                  "amount": 100,
+                  "note": "Full base fare + 25%"
+                }
+              }
+            },
+            {
+              "key": "per_km",
+              "title": "Distance Fare",
+              "subtitle": "For the kilometers travelled",
+              "value": {
+                "type": "rate",
+                "display": "₹15 per km",
+                "amount": 15,
+                "unit": "km"
+              },
+              "perBand": {
+                "off_peak": {
+                  "display": "₹15 per km",
+                  "amount": 15
+                },
+                "peak": {
+                  "display": "₹15 per km",
+                  "amount": 15
+                },
+                "night": {
+                  "display": "₹18.75 per km",
+                  "amount": 18.75
+                }
+              }
+            },
+            {
+              "key": "min_fare",
+              "title": "Minimum Fare",
+              "subtitle": "Lowest fare for a ride",
+              "value": {
+                "type": "amount",
+                "display": "₹100",
+                "amount": 100
+              },
+              "perBand": {
+                "off_peak": {
+                  "display": "₹100",
+                  "amount": 100
+                },
+                "peak": {
+                  "display": "₹100",
+                  "amount": 100
+                },
+                "night": {
+                  "display": "₹125",
+                  "amount": 125
+                }
+              }
+            },
+            {
+              "key": "waiting",
+              "title": "Wait Time charges",
+              "subtitle": "After 7 min",
+              "value": {
+                "type": "rate",
+                "display": "+ ₹2 per min",
+                "amount": 2,
+                "unit": "min"
+              },
+              "meta": {
+                "graceMinutes": 7,
+                "cap": null
+              }
+            }
+          ]
+        },
+        {
+          "key": "extra_fare",
+          "title": "Extra Fare (not applicable on all orders)",
+          "tone": "teal",
+          "rows": [
+            {
+              "key": "long_pickup",
+              "title": "Long Pickup Fare per km",
+              "subtitle": "After 2.5 km",
+              "value": {
+                "type": "rate",
+                "display": "+ ₹2 per km",
+                "amount": 2,
+                "unit": "km"
+              },
+              "meta": {
+                "freeKm": 2.5,
+                "cap": null
+              }
+            },
+            {
+              "key": "traffic_delay",
+              "title": "Traffic Delay",
+              "subtitle": "After 30 min over the estimate",
+              "value": {
+                "type": "rate",
+                "display": "+ ₹1.50 per min",
+                "amount": 1.5,
+                "unit": "min"
+              }
+            },
+            {
+              "key": "cancellation",
+              "title": "Cancellation Fare",
+              "subtitle": "When the customer cancels and you are within 300 m of pickup",
+              "value": {
+                "type": "range",
+                "display": "+ ₹0 to ₹80",
+                "min": 0,
+                "max": 80
+              },
+              "meta": {
+                "driverSharePct": 80,
+                "penaltyPctOfFare": 10,
+                "penaltyMax": 100,
+                "withinMeters": 300
+              }
+            },
+            {
+              "key": "surge",
+              "title": "Surge Fare",
+              "subtitle": "Extra fare paid by customer, goes to your earning",
+              "value": {
+                "type": "text",
+                "display": "Up to 1.75x"
+              }
+            }
+          ]
+        },
+        {
+          "key": "commission_gst",
+          "title": "Commission and GST",
+          "tone": "yellow",
+          "rows": [
+            {
+              "key": "platform_fee",
+              "title": "Platform Fee",
+              "subtitle": "Per ride, for the first 10 rides of the day",
+              "value": {
+                "type": "amount",
+                "display": "₹5 per ride",
+                "amount": 5
+              },
+              "meta": {
+                "dailyCapRides": 10
+              }
+            },
+            {
+              "key": "gst_on_platform",
+              "title": "GST on Platform Fee",
+              "subtitle": "Paid to Government",
+              "value": {
+                "type": "percent",
+                "display": "18%",
+                "amount": 18
+              }
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "distanceKm": 5,
+          "bands": {
+            "off_peak": {
+              "rideFare": 115,
+              "minimumFareApplied": false,
+              "platformFee": 5,
+              "gstOnPlatformFee": 0.9,
+              "youEarn": 109.1
+            },
+            "peak": {
+              "rideFare": 155,
+              "minimumFareApplied": false,
+              "platformFee": 5,
+              "gstOnPlatformFee": 0.9,
+              "youEarn": 149.1
+            },
+            "night": {
+              "rideFare": 193.75,
+              "minimumFareApplied": false,
+              "platformFee": 5,
+              "gstOnPlatformFee": 0.9,
+              "youEarn": 187.85
+            }
+          }
+        },
+        {
+          "distanceKm": 10,
+          "bands": {
+            "off_peak": {
+              "rideFare": 190,
+              "minimumFareApplied": false,
+              "platformFee": 5,
+              "gstOnPlatformFee": 0.9,
+              "youEarn": 184.1
+            },
+            "peak": {
+              "rideFare": 230,
+              "minimumFareApplied": false,
+              "platformFee": 5,
+              "gstOnPlatformFee": 0.9,
+              "youEarn": 224.1
+            },
+            "night": {
+              "rideFare": 287.5,
+              "minimumFareApplied": false,
+              "platformFee": 5,
+              "gstOnPlatformFee": 0.9,
+              "youEarn": 281.6
+            }
+          }
+        },
+        {
+          "distanceKm": 20,
+          "bands": {
+            "off_peak": {
+              "rideFare": 340,
+              "minimumFareApplied": false,
+              "platformFee": 5,
+              "gstOnPlatformFee": 0.9,
+              "youEarn": 334.1
+            },
+            "peak": {
+              "rideFare": 380,
+              "minimumFareApplied": false,
+              "platformFee": 5,
+              "gstOnPlatformFee": 0.9,
+              "youEarn": 374.1
+            },
+            "night": {
+              "rideFare": 475,
+              "minimumFareApplied": false,
+              "platformFee": 5,
+              "gstOnPlatformFee": 0.9,
+              "youEarn": 469.1
+            }
+          }
+        }
+      ],
+      "disclaimer": "Examples exclude surge, waiting, pickup and traffic compensation and coupons. Platform fee applies to the first 10 rides of the day."
+    }
+  }
+}

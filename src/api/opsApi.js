@@ -517,6 +517,12 @@ export const getPricingAudit = ({ scope, target, limit = 100, offset = 0 } = {})
 // that the broadcast could not be confirmed.
 export const reloadPricingCache = () => api.post(`${PRICING}/cache/reload`);
 
+// Rate card preview — the exact card the driver app gets (backend docs/41).
+// Read-only. Params, all optional: vehicleType, zoneId, at (ISO time). With no
+// vehicleType the server picks the first category; `tabs` lists every active one.
+export const getPricingRateCard = (params = {}) =>
+  api.get(`${PRICING}/rate-card`, { params });
+
 // What the answering server currently holds in memory — the fare engine reads
 // exactly this. With several servers behind the load balancer, two calls can
 // land on different ones; `servedBy` says which answered.

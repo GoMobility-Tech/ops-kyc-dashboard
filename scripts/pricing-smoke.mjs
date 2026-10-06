@@ -41,6 +41,7 @@ const apiStub = `
   export const getPricingSubscribers  = never;
   export const getPricingPenalties    = never;
   export const getPricingAudit        = never;
+  export const getPricingRateCard     = never;
   export const reloadPricingCache     = never;
   export const updatePricingVehicle   = never;
   export const createPricingVehicle   = never;
@@ -65,6 +66,8 @@ const entry = `
   import SubscribersTab from '${root}/src/pages/pricing-settings/SubscribersTab.jsx';
   import PenaltiesTab   from '${root}/src/pages/pricing-settings/PenaltiesTab.jsx';
   import AuditTab, { OriginCell, ChangeCell } from '${root}/src/pages/pricing-settings/AuditTab.jsx';
+  import RateCardTab, { RateCardView } from '${root}/src/pages/pricing-settings/RateCardTab.jsx';
+  import rateCards from '${root}/src/pages/pricing-settings/__fixtures__/rateCardPayload.json';
   import {
     buildPatch, splitVehiclePatch, VEHICLE_FIELDS, TIER_FIELDS,
     GST_FIELDS, SUBSCRIBER_FIELDS, PENALTY_FIELDS, isOff, cacheWarning,
@@ -88,7 +91,11 @@ const entry = `
 
   globalThis.__cases = [
     // ── Renders ────────────────────────────────────────────────────────────
-    ['PricingSettingsPage (loading)', () => render(PricingSettingsPage)],
+    ['PricingSettingsPage (loading)', () => {
+      const html = render(PricingSettingsPage);
+      must(/Rate Card/.test(text(html)), 'the Rate Card tab is missing from the tab strip');
+      return html;
+    }],
 
     ['VehiclesTab (real payload)', () => {
       const html = render(VehiclesTab, { data: payload.vehicles, onSaved: noop, onError: noop });
@@ -115,6 +122,80 @@ const entry = `
     ['SubscribersTab (real payload)', () => render(SubscribersTab, { subscribers: payload.subscribers, onSaved: noop, onError: noop })],
     ['PenaltiesTab (real payload)',   () => render(PenaltiesTab, { penalties: payload.penalties, onSaved: noop, onError: noop, onDeleted: noop })],
     ['AuditTab (loading)',            () => render(AuditTab)],
+
+    // ── Rate Card (preview of the driver app card — backend docs/41) ──────
+    // Fixture = the real response from the live pricing config (6 Oct 2026).
+    ['RateCardTab (loading)', () => render(RateCardTab)],
+
+    ['RateCardView (bike, real payload)', () => {
+      const html = render(RateCardView, { response: rateCards.bike, onSelectTab: noop });
+      const t = visible(html);
+      must(/What the driver sees/.test(t), 'the driver preview pane is missing');
+      must(/Half base fare/.test(t) && /Full base fare/.test(t), 'the off-peak / peak explanation is missing');
+      // The point of the screen: half base off-peak, full at peak, ×1.25 at night.
+      must(/₹10/.test(t) && /₹20/.test(t) && /₹25/.test(t), 'base fare per band (₹10 / ₹20 / ₹25) is missing');
+      must(/₹43\.75/.test(t), 'night minimum fare is missing');
+      must(/Platform Fee/.test(t) && /GST on Platform Fee/.test(t), 'commission rows are missing');
+      must(/33\.82/.test(t) && /123\.82/.test(t), 'earnings examples are missing');
+      must(/Minimum fare applied/.test(text(html)), 'the minimum-fare marker is missing');
+      must(/Raw response/.test(t), 'the raw JSON viewer is missing');
+      must(/now/.test(t), 'the current band is not marked');
+      // every category is a tab
+      for (const n of ['Bike', 'Auto', 'Car', 'XL', 'Premium', 'Luxury']) must(new RegExp(n).test(t), 'tab missing: ' + n);
+      return html;
+    }],
+
+    ['RateCardView (car, real payload)', () => {
+      const html = render(RateCardView, { response: rateCards.car, onSelectTab: noop });
+      const t = visible(html);
+      must(/₹40/.test(t) && /₹80/.test(t) && /₹100/.test(t), 'car base per band (₹40 / ₹80 / ₹100) is missing');
+      return html;
+    }],
+
+    ['RateCardView (category not in zone → no card)', () => {
+      const r = JSON.parse(JSON.stringify(rateCards.bike));
+      r.tabs[0].disabled = true; r.tabs[0].disabledReason = 'Not available in this zone';
+      r.card = null; r.emptyReason = 'Not available in this zone';
+      const t = visible(render(RateCardView, { response: r, onSelectTab: noop }));
+      must(/not in zone/.test(t), 'the greyed tab is not labelled');
+      must(/No card for this category/.test(t) && /Not available in this zone/.test(t), 'the reason is not shown');
+      return t;
+    }],
+
+    ['RateCardView (no categories)', () => {
+      const t = visible(render(RateCardView, { response: { tabs: [], selected: null, card: null, emptyReason: 'Complete your vehicle details' }, onSelectTab: noop }));
+      must(/No categories/.test(t) && /vehicle details/.test(t), 'the empty state is missing');
+      return t;
+    }],
+
+    ['RateCardView (null response renders nothing, not a crash)', () => {
+      // By design: the container shows a spinner or the error banner instead.
+      must(render(RateCardView, { response: null }) === '', 'a null response rendered something');
+      return 'ok';
+    }],
+
+    ['RateCardView (fallback off-peak bands + per-km slabs)', () => {
+      const r = JSON.parse(JSON.stringify(rateCards.bike));
+      const off = r.card.bands.find(b => b.key === 'off_peak');
+      off.baseFare = { discountBands: [{ upToKm: 7, discountPct: 53 }, { upToKm: 9, discountPct: 45 }, { upToKm: null, discountPct: 25 }] };
+      off.summary = 'Up to 53% off base fare';
+      const km = r.card.sections[0].rows.find(x => x.key === 'per_km');
+      km.slabs = [
+        { fromKm: 0, toKm: 10, display: '0 to 10 km', rate: { display: '₹8 per km', amount: 8 } },
+        { fromKm: 10, toKm: 20, display: '10 to 20 km', rate: { display: '₹9 per km', amount: 9 } },
+      ];
+      const t = visible(render(RateCardView, { response: r, onSelectTab: noop }));
+      must(/up to 7 km 53%/.test(t) && /beyond 25%/.test(t), 'the distance-based discount bands are not shown');
+      must(/10 to 20 km/.test(t) && /₹9 per km/.test(t), 'the per-km slabs are not shown');
+      return t;
+    }],
+
+    ['RateCardView (hostile: sparse card)', () => {
+      const r = { tabs: [{ vehicleType: 'bike', displayName: 'Bike', disabled: false }], selected: 'bike',
+        card: { now: null, bands: [], sections: [{ key: 'x', title: 'Empty', tone: 'nope', rows: [{ key: 'r', title: 'Row' }] }],
+                examples: [], disclaimer: null } };
+      return render(RateCardView, { response: r, onSelectTab: noop });
+    }],
 
     // ── Change history rows ────────────────────────────────────────────────
     // pricing_config_audit is empty in production — nothing has ever been
