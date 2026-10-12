@@ -50,6 +50,12 @@ const apiStub = `
   export const updatePricingSubscriber = never;
   export const savePricingPenalty     = never;
   export const deletePricingPenalty   = never;
+  export const getSlabRules           = never;
+  export const getSlabCoverage        = never;
+  export const getSlabScopes          = never;
+  export const previewSlabRules       = never;
+  export const saveSlabSet            = never;
+  export const deleteSlabSet          = never;
 `;
 
 const entry = `
@@ -88,7 +94,11 @@ const entry = `
 
   globalThis.__cases = [
     // ── Renders ────────────────────────────────────────────────────────────
-    ['PricingSettingsPage (loading)', () => render(PricingSettingsPage)],
+    ['PricingSettingsPage (loading)', () => {
+      const html = render(PricingSettingsPage);
+      must(/Slabs/.test(visible(html)), 'the Slabs tab is missing from the tab strip');
+      return html;
+    }],
 
     ['VehiclesTab (real payload)', () => {
       const html = render(VehiclesTab, { data: payload.vehicles, onSaved: noop, onError: noop });

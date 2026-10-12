@@ -274,6 +274,7 @@ export const AUDIT_SCOPES = [
   { value: 'tier',       label: 'Distance tiers' },
   { value: 'subscriber', label: 'GO Pass' },
   { value: 'penalty',    label: 'Penalties' },
+  { value: 'slab_rule',  label: 'Distance slabs' },
 ];
 
 // The write endpoints all return this. `all_servers: false` means the value is

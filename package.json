@@ -10,7 +10,8 @@
     "verify:dispatch": "node scripts/verify-dispatch-meta.mjs",
     "smoke:dispatch": "node scripts/render-smoke.mjs",
     "smoke:pricing": "node scripts/pricing-smoke.mjs",
-    "smoke:exports": "node scripts/exports-smoke.mjs"
+    "smoke:exports": "node scripts/exports-smoke.mjs",
+    "smoke:slabs": "node scripts/slab-smoke.mjs"
   },
   "dependencies": {
     "axios": "^1.6.0",

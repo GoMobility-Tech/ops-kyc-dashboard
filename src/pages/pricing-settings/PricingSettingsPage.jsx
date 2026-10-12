@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Car, SlidersHorizontal, Receipt, Ruler, BadgeCheck, ShieldAlert, History,
-  RefreshCw, Server, CheckCircle2,
+  RefreshCw, Server, CheckCircle2, Layers,
 } from 'lucide-react';
 import { Tabs, Alert, Spinner, Button, Badge } from '../../components/ui';
 import {
@@ -18,6 +18,7 @@ import TiersTab       from './TiersTab.jsx';
 import SubscribersTab from './SubscribersTab.jsx';
 import PenaltiesTab   from './PenaltiesTab.jsx';
 import AuditTab       from './AuditTab.jsx';
+import SlabsTab       from './slab/SlabsTab.jsx';
 
 // ─── Pricing Settings ───────────────────────────────────────────────────────
 //
@@ -38,6 +39,7 @@ import AuditTab       from './AuditTab.jsx';
 
 const TABS = [
   { value: 'vehicles',    label: 'Vehicles',   icon: Car },
+  { value: 'slabs',       label: 'Slabs',      icon: Layers },
   { value: 'settings',    label: 'Settings',   icon: SlidersHorizontal },
   { value: 'gst',         label: 'GST',        icon: Receipt },
   { value: 'tiers',       label: 'Distance',   icon: Ruler },
@@ -119,6 +121,16 @@ export default function PricingSettingsPage() {
     load();
   }, [load]);
 
+  // The slab tab owns its own data, so a save there must NOT call `load()` —
+  // that would swap the whole screen for a spinner and throw away what the tab
+  // is showing. It still gets the same flash line and the same cache warning.
+  const onSlabSaved = useCallback((res, message) => {
+    setError('');
+    setFlash(message);
+    const warn = cacheWarning(res);
+    if (warn) setStaleCache(warn);
+  }, []);
+
   const onError = useCallback((message) => {
     setFlash('');
     setError(message);
@@ -193,6 +205,9 @@ export default function PricingSettingsPage() {
         <>
           {tab === 'vehicles' && (
             <VehiclesTab data={data?.vehicles} tiers={data?.tiers} onSaved={onSaved} onError={onError} />
+          )}
+          {tab === 'slabs' && (
+            <SlabsTab gst={data?.gst} onSaved={onSlabSaved} onError={onError} onGoSettings={() => setTab('settings')} />
           )}
           {tab === 'settings' && (
             <SettingsTab

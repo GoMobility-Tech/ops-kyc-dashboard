@@ -501,6 +501,19 @@ export const savePricingPenalty = (offenseType, offenseCount, patch) =>
 export const deletePricingPenalty = (offenseType, offenseCount) =>
   api.delete(`${PRICING}/penalties/${offenseType}/${offenseCount}`);
 
+// ─── Distance slabs (pricing_slab_rules) ─────────────────────────────────────
+// A "set" = one (scope, vehicle, band) with its distance slabs. Saving replaces
+// the whole set atomically; the backend validates gaps / overlaps / starting at 0.
+// Rules only CHARGE when the `slab_pricing_mode` setting is `on` (`shadow` just
+// compares) — every response carries `flag` so the screen can say so.
+export const getSlabRules    = (params = {}) => api.get(`${PRICING}/slab-rules`, { params });
+export const getSlabCoverage = () => api.get(`${PRICING}/slab-rules/coverage`);
+export const getSlabScopes   = () => api.get(`${PRICING}/slab-rules/scopes`);
+export const previewSlabRules = (body) => api.post(`${PRICING}/slab-rules/preview`, body);
+export const saveSlabSet     = (body) => api.put(`${PRICING}/slab-rules/sets`, body);
+export const deleteSlabSet   = (params) => api.delete(`${PRICING}/slab-rules/sets`, { params });
+
+
 // Who changed what, newest first. `scope` is one of vehicle | tier |
 // subscriber | gst | penalty | setting.
 export const getPricingAudit = ({ scope, target, limit = 100, offset = 0 } = {}) =>
