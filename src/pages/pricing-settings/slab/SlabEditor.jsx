@@ -49,11 +49,16 @@ function CellEditor({ cell, km, vehicleBase, onChange, disabled, bad, advanced =
       )}
 
       {advanced && cell.mode === 'per_km' && (
-        <div className="flex items-center gap-1 text-xs text-ink-muted">
-          then +/− ₹
-          <input type="number" step="0.5" value={cell.offset ?? ''} disabled={disabled} placeholder="0"
-                 title="A fixed ₹ added to (or, if negative, taken off) rate × km. Used when the old pricing charged different rates for the first 10 km, the next 10 km, and so on."
-                 onChange={e => onChange({ offset: e.target.value })} className={`${numField} w-20`} />
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-1 text-xs text-ink-muted">
+            add / take off ₹
+            <input type="number" step="0.5" value={cell.offset ?? ''} disabled={disabled} placeholder="0"
+                   title="Fare = rate × km + this amount. Leave 0 unless you need it."
+                   onChange={e => onChange({ offset: e.target.value })} className={`${numField} w-20`} />
+          </div>
+          <p className="text-[10px] text-ink-faint leading-snug max-w-[200px]">
+            Fare = rate × km + this amount (use a minus for a deduction). Leave 0 normally.
+          </p>
         </div>
       )}
 
@@ -429,7 +434,7 @@ export default function SlabEditor({
         </div>
         {advanced && (
           <p className="text-[11px] text-ink-faint leading-relaxed">
-            <strong>Minimum fare</strong>: the ride fare never goes below this (applied after surge). <strong>then +/− ₹</strong> on a per-km
+            <strong>Minimum fare</strong>: the ride fare never goes below this (applied after surge). <strong>add / take off ₹</strong> on a per-km
             rate: a fixed amount added to rate × km, e.g. ₹16/km − ₹10 reproduces &ldquo;₹15 for the first 10 km, ₹16 after&rdquo;.
           </p>
         )}
