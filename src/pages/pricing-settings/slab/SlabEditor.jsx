@@ -6,7 +6,7 @@ import ScopePicker from './ScopePicker.jsx';
 import SlabPreviewTable from './SlabPreviewTable.jsx';
 import { previewSlabRules, saveSlabSet } from '../../../api/opsApi.js';
 import {
-  COMPONENTS, COMPONENT_LABEL, BAND_LABEL, BAND_HELP, MODE_OPTIONS, kmLabel, num,
+  COMPONENTS, COMPONENT_LABEL, BAND_LABEL, BAND_HELP, MODE_OPTIONS, MODE_HELP, kmLabel, num,
   addSlab, removeSlab, setSlabEnd, setCell, validateLadder, ladderToRules,
   rulesToLadder, ladderSignature, previewKms, blankLadder,
 } from './slabModel.js';
@@ -25,11 +25,15 @@ const setKeyOf = (scope, scopeId, vehicle, band) => `${scope}:${scopeId ?? '*'}:
 function CellEditor({ cell, onChange, disabled, bad }) {
   const ring = bad ? 'border-red-300' : '';
   return (
-    <div className="space-y-1 min-w-[150px]">
+    <div className="space-y-1 min-w-[170px]">
       <select value={cell.mode} disabled={disabled} onChange={e => onChange({ mode: e.target.value })}
               className={`${field} w-full ${ring}`}>
         {MODE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
+
+      {MODE_HELP[cell.mode] && (
+        <p className="text-[10px] text-ink-faint leading-snug max-w-[220px]">{MODE_HELP[cell.mode]}</p>
+      )}
 
       {(cell.mode === 'fixed' || cell.mode === 'per_km') && (
         <div className="flex items-center gap-1 text-xs text-ink-muted">

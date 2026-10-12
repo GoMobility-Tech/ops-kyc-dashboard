@@ -180,10 +180,10 @@ const entry = `
     }],
 
     ['describeCell / money / kmLabel', () => {
-      eq(M.describeCell({ mode: 'fixed', value: '95' }), { main: '₹95', sub: 'fixed' }, 'fixed');
+      eq(M.describeCell({ mode: 'fixed', value: '95' }), { main: '₹95', sub: 'flat amount' }, 'fixed');
       eq(M.describeCell({ mode: 'per_km', value: '15' }).main, '₹15 / km', 'per km');
       eq(M.describeCell({ mode: 'percent', value: '40', ref: '80' }), { main: '40%', sub: 'of ₹80' }, 'percent');
-      eq(M.describeCell({ mode: 'percent', value: '40', ref: '' }).sub, 'of vehicle base fare', 'percent of vehicle');
+      eq(M.describeCell({ mode: 'percent', value: '40', ref: '' }).sub, 'of the vehicle\u2019s base fare', 'percent of vehicle');
       eq(M.money('17.60'), '₹17.6', 'trailing zero'); eq(M.money(null), '—', 'null');
       const l = M.rulesToLadder(SHEET);
       eq([M.kmLabel(l[0]), M.kmLabel(l[3])], ['0 – 3.5 km', '10 – 15 km'], 'km labels');
@@ -305,6 +305,24 @@ const entry = `
     }],
 
     ['ScopePicker: scopes not loaded yet does not crash', () => render(ScopePicker, { scopes: null, scopeType: 'city', onScopeType: noop, stateId: null, onStateId: noop, cityIds: [], onCityIds: noop })],
+
+    ['mode labels say what they do, and each has a one-line explanation', () => {
+      const labels = M.MODE_OPTIONS.map(o => o.label).join(' | ');
+      must(/Flat amount/.test(labels) && /Rate per km/.test(labels) && /Percentage of an amount/.test(labels) && /Not charged/.test(labels), 'labels: ' + labels);
+      for (const m of ['fixed', 'per_km', 'percent', 'none']) must(M.MODE_HELP[m] && M.MODE_HELP[m].length > 20, 'no help for ' + m);
+      must(/7 km at ₹15 = ₹105/.test(M.MODE_HELP.per_km), 'per-km example missing');
+      return 'ok';
+    }],
+
+    ['SlabEditor: a chosen mode shows its explanation under the dropdown', () => {
+      const l = M.rulesToLadder(SHEET);
+      const draft = { mode: 'edit', scope: 'city', scope_id: 108, scopeName: 'Chandigarh', vehicle: 'car', band: 'off_peak', note: '', ladder: l };
+      const t = visible(render(SlabEditor, { draft, options: OPTIONS, scopes: SCOPES, existingSets: [], gst: {}, onCancel: noop, onChanged: noop, onSaved: noop, onError: noop }));
+      must(/same amount for every trip in this slab/.test(t), 'flat help missing');
+      must(/total km/.test(t) && /7 km at ₹15 = ₹105/.test(t), 'per-km help missing');
+      must(/This % of the amount on the right/.test(t), 'percent help missing');
+      return 'ok';
+    }],
 
     ['SlabEditor (create): the three steps, add slab, disabled save', () => {
       const draft = { mode: 'create', scopeType: 'city', stateId: null, cityIds: [], vehicle: '', band: 'off_peak', note: '', ladder: M.blankLadder() };

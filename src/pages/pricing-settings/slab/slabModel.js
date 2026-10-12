@@ -44,12 +44,20 @@ export const SCOPE_LABEL = { global: 'All cities', state: 'State', city: 'City' 
 // 'none' is not a backend mode — it is "fixed ₹0", given its own word because
 // "base fare: fixed 0" reads like a mistake while "None" reads like a decision.
 export const MODE_OPTIONS = [
-  { value: '',        label: 'Choose…' },
-  { value: 'fixed',   label: 'Fixed ₹' },
-  { value: 'per_km',  label: '₹ per km' },
-  { value: 'percent', label: '% of amount' },
-  { value: 'none',    label: 'None (₹0)' },
+  { value: '',        label: 'Choose how to charge…' },
+  { value: 'fixed',   label: 'Flat amount (₹)' },
+  { value: 'per_km',  label: 'Rate per km (₹ × km)' },
+  { value: 'percent', label: 'Percentage of an amount (%)' },
+  { value: 'none',    label: 'Not charged (₹0)' },
 ];
+
+// One plain sentence under each choice, so nobody has to guess what it does.
+export const MODE_HELP = {
+  fixed:   'The same amount for every trip in this slab, however long it is.',
+  per_km:  'Rate × the trip\u2019s total km. 7 km at ₹15 = ₹105.',
+  percent: 'This % of the amount on the right. Leave that amount empty to use the vehicle\u2019s base fare.',
+  none:    'Nothing is charged for this part in this slab.',
+};
 
 export const num = (v) => {
   if (v === null || v === undefined || v === '') return null;
@@ -288,14 +296,14 @@ export const kmLabel = (row) => {
 /** { main, sub } for a cell — what the fare is, and how it is worked out. */
 export const describeCell = (cell) => {
   switch (cell?.mode) {
-    case 'none':    return { main: '—', sub: 'none' };
-    case 'fixed':   return { main: money(cell.value), sub: 'fixed' };
-    case 'per_km':  return { main: `${money(cell.value)} / km`, sub: 'whole trip × km' };
+    case 'none':    return { main: '—', sub: 'not charged' };
+    case 'fixed':   return { main: money(cell.value), sub: 'flat amount' };
+    case 'per_km':  return { main: `${money(cell.value)} / km`, sub: 'rate × trip km' };
     case 'percent': {
       const ref = num(cell.ref);
       return {
         main: `${plain(cell.value)}%`,
-        sub: ref === null ? 'of vehicle base fare' : `of ${money(ref)}`,
+        sub: ref === null ? 'of the vehicle\u2019s base fare' : `of ${money(ref)}`,
       };
     }
     default:        return { main: '—', sub: 'not set' };
