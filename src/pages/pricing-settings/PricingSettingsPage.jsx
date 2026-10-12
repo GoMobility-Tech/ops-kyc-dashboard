@@ -209,7 +209,7 @@ export default function PricingSettingsPage() {
             <VehiclesTab data={data?.vehicles} tiers={data?.tiers} onSaved={onSaved} onError={onError} />
           )}
           {tab === 'slabs' && (
-            <SlabsTab gst={data?.gst} onSaved={onSlabSaved} onError={onError} onGoSettings={() => setTab('settings')} />
+            <SlabsTab gst={data?.gst} vehicles={data?.vehicles?.vehicles} onSaved={onSlabSaved} onError={onError} onGoSettings={() => setTab('settings')} />
           )}
           {tab === 'settings' && (
             <SettingsTab

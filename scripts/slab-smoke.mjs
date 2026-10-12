@@ -180,10 +180,10 @@ const entry = `
     }],
 
     ['describeCell / money / kmLabel', () => {
-      eq(M.describeCell({ mode: 'fixed', value: '95' }), { main: '₹95', sub: 'fixed' }, 'fixed');
+      eq(M.describeCell({ mode: 'fixed', value: '95' }), { main: '₹95', sub: 'flat amount' }, 'fixed');
       eq(M.describeCell({ mode: 'per_km', value: '15' }).main, '₹15 / km', 'per km');
       eq(M.describeCell({ mode: 'percent', value: '40', ref: '80' }), { main: '40%', sub: 'of ₹80' }, 'percent');
-      eq(M.describeCell({ mode: 'percent', value: '40', ref: '' }).sub, 'of vehicle base fare', 'percent of vehicle');
+      eq(M.describeCell({ mode: 'percent', value: '40', ref: '' }).sub, 'of the vehicle\u2019s base fare', 'percent of vehicle');
       eq(M.money('17.60'), '₹17.6', 'trailing zero'); eq(M.money(null), '—', 'null');
       const l = M.rulesToLadder(SHEET);
       eq([M.kmLabel(l[0]), M.kmLabel(l[3])], ['0 – 3.5 km', '10 – 15 km'], 'km labels');
@@ -214,6 +214,42 @@ const entry = `
       const ks = M.previewKms(M.rulesToLadder(SHEET));
       for (const k of [3.5, 3.6, 5, 5.1, 10, 10.1, 15, 15.1]) must(ks.includes(k), 'missing ' + k + ' in ' + ks);
       eq([...ks].sort((a, b) => a - b), ks, 'sorted');
+      return 'ok';
+    }],
+
+    ['cellAmount / rowRiderTotal: what each cell works out to', () => {
+      const l = M.rulesToLadder(SHEET);
+      eq(M.cellAmount(l[1].cells.base, 5, 80), 32, '40% of 80');
+      eq(M.cellAmount({ mode: 'percent', value: '40', ref: '' }, 5, 80), 32, '% of vehicle base');
+      eq(M.cellAmount({ mode: 'percent', value: '40', ref: '' }, 5, null), null, '% of unknown base is unknown, not 0');
+      eq(M.cellAmount(l[2].cells.distance, 7, 80), 105, '7 km at 15');
+      eq(M.cellAmount(l[0].cells.base, 3, 80), 0, 'none is 0');
+      eq(M.cellAmount({ mode: 'fixed', value: '' }, 3, 80), null, 'unfilled is unknown');
+      const t = M.rowRiderTotal(l[1], { riderRatePct: 5, convFeeGstPct: 18 }, 80);
+      eq([t.km, t.total], [5, 133.12], 'row total at its upper km matches the engine');
+      eq(M.rowRiderTotal(M.blankLadder()[0], {}, 80), null, 'unfinished row has no total');
+      eq(M.sampleKm({ from: 15, to: '' }), 20, 'open slab samples 5 km in');
+      return 'ok';
+    }],
+
+    ['precedenceNotes: city beats state/all; state/all does not touch a city with its own set', () => {
+      const cities = SCOPES.cities;
+      const glob = { key: 'global:*:car:off_peak', scope: 'global', scope_id: null, vehicle_type: 'car', band: 'off_peak' };
+      const t = [{ scope: 'city', scope_id: 108, name: 'Chandigarh' }];
+      must(/instead of the all-cities/.test(M.precedenceNotes({ targets: t, existingSets: [glob], vehicle: 'car', band: 'off_peak', cities })[0]), 'city-over-global note missing');
+      eq(M.precedenceNotes({ targets: t, existingSets: [glob], vehicle: 'bike', band: 'off_peak', cities }), [], 'other vehicle = no note');
+      eq(M.precedenceNotes({ targets: t, existingSets: [glob], vehicle: 'car', band: 'peak', cities }), [], 'other band = no note');
+      const g = [{ scope: 'global', scope_id: null, name: 'All cities' }];
+      const own = M.precedenceNotes({ targets: g, existingSets: [SET], vehicle: 'car', band: 'off_peak', cities })[0];
+      must(/keep using them: Chandigarh/.test(own), 'own-set note missing: ' + own);
+      return 'ok';
+    }],
+
+    ['existingTargets: finds places that already have a set for this vehicle + band only', () => {
+      const t = [{ scope: 'city', scope_id: 108, name: 'Chandigarh' }, { scope: 'city', scope_id: 159, name: 'Panchkula' }];
+      eq(M.existingTargets(t, [SET], 'car', 'off_peak').map(x => x.target.name), ['Chandigarh'], 'only Chandigarh');
+      eq(M.existingTargets(t, [SET], 'bike', 'off_peak').length, 0, 'other vehicle');
+      eq(M.existingTargets(t, [SET], 'car', 'peak').length, 0, 'other band');
       return 'ok';
     }],
 
@@ -306,12 +342,32 @@ const entry = `
 
     ['ScopePicker: scopes not loaded yet does not crash', () => render(ScopePicker, { scopes: null, scopeType: 'city', onScopeType: noop, stateId: null, onStateId: noop, cityIds: [], onCityIds: noop })],
 
+    ['mode labels say what they do, and each has a one-line explanation', () => {
+      const labels = M.MODE_OPTIONS.map(o => o.label).join(' | ');
+      must(/Flat amount/.test(labels) && /Rate per km/.test(labels) && /Percentage of an amount/.test(labels) && /Not charged/.test(labels), 'labels: ' + labels);
+      for (const m of ['fixed', 'per_km', 'percent', 'none']) must(M.MODE_HELP[m] && M.MODE_HELP[m].length > 20, 'no help for ' + m);
+      must(/7 km at ₹15 = ₹105/.test(M.MODE_HELP.per_km), 'per-km example missing');
+      return 'ok';
+    }],
+
+    ['SlabEditor: one legend explains the choices, and each cell shows its rupee result', () => {
+      const draft = { mode: 'edit', scope: 'city', scope_id: 108, scopeName: 'Chandigarh', vehicle: 'car', band: 'off_peak', note: '', ladder: M.rulesToLadder(SHEET) };
+      const t = visible(render(SlabEditor, { draft, options: OPTIONS, scopes: SCOPES, existingSets: [], gst: { riderRatePct: 5, convFeeGstPct: 18 }, vehicleBaseFares: { car: 80 }, onCancel: noop, onChanged: noop, onSaved: noop, onError: noop }));
+      must(/same for every trip in the slab/.test(t) && /rate × trip km/.test(t) && /empty = the vehicle/.test(t), 'legend missing');
+      must(/= ₹32/.test(t), '40% of 80 result missing: ' + t);
+      must(/= ₹75 for a 5 km trip/.test(t), 'per-km result missing');
+      must(/₹133\.12/.test(t) && /for a 5 km trip, with GST/.test(t), 'row total missing');
+      return 'ok';
+    }],
+
     ['SlabEditor (create): the three steps, add slab, disabled save', () => {
       const draft = { mode: 'create', scopeType: 'city', stateId: null, cityIds: [], vehicle: '', band: 'off_peak', note: '', ladder: M.blankLadder() };
       const html = render(SlabEditor, { draft, options: OPTIONS, scopes: SCOPES, existingSets: [SET], gst: {}, onCancel: noop, onChanged: noop, onSaved: noop, onError: noop });
       const t = visible(html);
-      must(/New slab set/.test(t) && /Where and for whom/.test(t) && /2 · Slabs/.test(t) && /What the rider pays/.test(t), 'steps missing: ' + t);
-      must(/Add slab/.test(t) && /Save slabs/.test(t), 'buttons missing');
+      must(/New slab set/.test(t) && /Where and for whom/.test(t) && /2 · Slabs/.test(t) && /Check the numbers/.test(t), 'steps missing: ' + t);
+      must(/How slabs work/.test(t) && /whole trip/.test(t), 'explainer missing');
+      must(/Start from an example/.test(t) && /Go Car off-peak sheet/.test(t), 'example starter missing');
+      must(/Add another slab/.test(t) && /Save slabs/.test(t), 'buttons missing');
       must(/Pick where this applies/.test(t), 'target hint missing');
       must(/Choose a vehicle/.test(t), 'vehicle prompt missing');
       must(/Copy slabs from/.test(t), 'copy-from missing');
@@ -325,22 +381,31 @@ const entry = `
       const t = visible(html);
       must(/Edit slab set/.test(t) && /Chandigarh · car · Off-peak/.test(t), 'edit header missing: ' + t);
       must(/cannot be changed/.test(t), 'locked-target note missing');
-      must(!/will replace slabs that already exist/.test(t), 'replace warning shown while editing');
+      must(!/already has/.test(t), 'clash warning shown while editing');
       must(!/Search a city/.test(t), 'scope picker shown while editing');
       must(/Saves for Chandigarh/.test(t), 'target summary missing');
       must((html.match(/<tr/g) || []).length >= 5, 'one row per slab expected');
       return html;
     }],
 
+    ['SlabEditor (copy to a place with no set yet): no warning, Save is live without edits', () => {
+      const draft = { mode: 'create', copyOf: SET.key, scopeType: 'city', stateId: null, cityIds: [153, 159], vehicle: 'car', band: 'off_peak', note: '', ladder: M.rulesToLadder(SHEET) };
+      const html = render(SlabEditor, { draft, options: OPTIONS, scopes: SCOPES, existingSets: [{ ...SET, scope_id: 108 }], gst: {}, onCancel: noop, onChanged: noop, onSaved: noop, onError: noop });
+      must(/Gurgaon/.test(visible(html)), 'target missing');
+      must(!/already has/.test(visible(html)), 'false clash');
+      must(!/<button[^>]*\\sdisabled=""[^>]*>(?:(?!<\\/button>).)*Save 2 sets/s.test(html), 'Save disabled on an unedited copy to new places');
+      return html;
+    }],
+
     ['SlabEditor (copy): existing target warns it will replace', () => {
       const draft = { mode: 'create', copyOf: SET.key, scopeType: 'city', stateId: null, cityIds: [108, 159], vehicle: 'car', band: 'off_peak', note: '', ladder: M.rulesToLadder(SHEET) };
-      const html = render(SlabEditor, { draft, options: OPTIONS, scopes: SCOPES, existingSets: [SET], gst: {}, onCancel: noop, onChanged: noop, onSaved: noop, onError: noop });
+      const html = render(SlabEditor, { draft, options: OPTIONS, scopes: SCOPES, existingSets: [SET], gst: {}, onCancel: noop, onChanged: noop, onSaved: noop, onError: noop, onEditExisting: noop });
       const t = visible(html);
       must(/Copy slab set/.test(t), 'copy header missing');
-      must(/will replace slabs that already exist/.test(t) && /Chandigarh already has/.test(t), 'replace warning missing: ' + t);
+      must(/Chandigarh already has Off-peak slabs for car/.test(t) && /delete the existing slabs/.test(t), 'clash warning missing: ' + t);
+      must(/Edit the existing slabs instead/.test(t) && /Replace the existing slabs/.test(t), 'clash choices missing');
+      must(/<button[^>]*\\sdisabled=""[^>]*>(?:(?!<\\/button>).)*Save 2 sets/s.test(html), 'Save must stay disabled until Replace is ticked');
       must(/Will save 2 sets/.test(t) && /Save 2 sets/.test(t), 'multi-city summary missing');
-      // a copy has no edits by definition — Save must still be live, or copying is impossible
-      must(!/<button[^>]*\\sdisabled=""[^>]*>(?:(?!<\\/button>).)*Save 2 sets/s.test(html), 'Save is disabled on an unedited copy');
       return html;
     }],
 

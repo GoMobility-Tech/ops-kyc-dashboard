@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { X, Search } from 'lucide-react';
 import { Badge } from '../../../components/ui';
 import Segmented from './Segmented.jsx';
@@ -12,9 +12,13 @@ const field = 'w-full bg-white rounded-lg border border-line px-3 py-2 text-sm f
 // always beats a state set, which beats the all-cities set. The hint under the
 // switch says that, because it is the thing people get wrong.
 export default function ScopePicker({
-  scopes, scopeType, onScopeType, stateId, onStateId, cityIds, onCityIds, disabled = false,
+  scopes, scopeType, onScopeType, stateId, onStateId, cityIds, onCityIds, disabled = false, autoFocusSearch = false,
 }) {
   const [q, setQ] = useState('');
+  const searchRef = useRef(null);
+  useEffect(() => {
+    if (autoFocusSearch && scopeType === 'city' && searchRef.current) searchRef.current.focus({ preventScroll: true });
+  }, [autoFocusSearch, scopeType]);
 
   const cities = scopes?.cities || [];
   const states = scopes?.states || [];
@@ -82,7 +86,7 @@ export default function ScopePicker({
             <>
               <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-line focus-within:border-brand-600 focus-within:ring-2 focus-within:ring-brand-500/20">
                 <Search size={14} className="text-ink-faint shrink-0" />
-                <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search a city or state…"
+                <input ref={searchRef} value={q} onChange={e => setQ(e.target.value)} placeholder="Search a city or state…"
                        className="flex-1 bg-transparent text-sm outline-none placeholder:text-ink-faint min-w-0" />
               </div>
               <div className="max-h-48 overflow-y-auto rounded-lg border border-line bg-white divide-y divide-line-soft">

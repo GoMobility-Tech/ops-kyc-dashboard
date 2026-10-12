@@ -44,12 +44,20 @@ export const SCOPE_LABEL = { global: 'All cities', state: 'State', city: 'City' 
 // 'none' is not a backend mode — it is "fixed ₹0", given its own word because
 // "base fare: fixed 0" reads like a mistake while "None" reads like a decision.
 export const MODE_OPTIONS = [
-  { value: '',        label: 'Choose…' },
-  { value: 'fixed',   label: 'Fixed ₹' },
-  { value: 'per_km',  label: '₹ per km' },
-  { value: 'percent', label: '% of amount' },
-  { value: 'none',    label: 'None (₹0)' },
+  { value: '',        label: 'Choose how to charge…' },
+  { value: 'fixed',   label: 'Flat amount (₹)' },
+  { value: 'per_km',  label: 'Rate per km (₹ × km)' },
+  { value: 'percent', label: 'Percentage of an amount (%)' },
+  { value: 'none',    label: 'Not charged (₹0)' },
 ];
+
+// One plain sentence under each choice, so nobody has to guess what it does.
+export const MODE_HELP = {
+  fixed:   'The same amount for every trip in this slab, however long it is.',
+  per_km:  'Rate × the trip\u2019s total km. 7 km at ₹15 = ₹105.',
+  percent: 'This % of the amount on the right. Leave that amount empty to use the vehicle\u2019s base fare.',
+  none:    'Nothing is charged for this part in this slab.',
+};
 
 export const num = (v) => {
   if (v === null || v === undefined || v === '') return null;
@@ -288,14 +296,14 @@ export const kmLabel = (row) => {
 /** { main, sub } for a cell — what the fare is, and how it is worked out. */
 export const describeCell = (cell) => {
   switch (cell?.mode) {
-    case 'none':    return { main: '—', sub: 'none' };
-    case 'fixed':   return { main: money(cell.value), sub: 'fixed' };
-    case 'per_km':  return { main: `${money(cell.value)} / km`, sub: 'whole trip × km' };
+    case 'none':    return { main: '—', sub: 'not charged' };
+    case 'fixed':   return { main: money(cell.value), sub: 'flat amount' };
+    case 'per_km':  return { main: `${money(cell.value)} / km`, sub: 'rate × trip km' };
     case 'percent': {
       const ref = num(cell.ref);
       return {
         main: `${plain(cell.value)}%`,
-        sub: ref === null ? 'of vehicle base fare' : `of ${money(ref)}`,
+        sub: ref === null ? 'of the vehicle\u2019s base fare' : `of ${money(ref)}`,
       };
     }
     default:        return { main: '—', sub: 'not set' };
@@ -345,4 +353,106 @@ export const previewWarnings = (preview, gst = {}) => {
     out.push({ kind: 'gap', text: `From ${firstGap} km the set does not cover the trip (the last slab is closed), so the old pricing engine is used there.` });
   }
   return out;
+};
+
+// ─── What a cell works out to ───────────────────────────────────────────────
+
+/** Sample km for a row: its upper limit, or 5 km into an open-ended slab. */
+export const sampleKm = (row) => {
+  const to = num(row.to);
+  if (to !== null) return to;
+  return (num(row.from) ?? 0) + 5;
+};
+
+/** ₹ a cell charges at `km`. null when it cannot be known yet (e.g. % of base fare, base fare unknown). */
+export const cellAmount = (cell, km, vehicleBase = null) => {
+  switch (cell?.mode) {
+    case 'none':    return 0;
+    case 'fixed':   return num(cell.value);
+    case 'per_km':  { const v = num(cell.value); return v === null ? null : Number((v * km).toFixed(2)); }
+    case 'percent': {
+      const v = num(cell.value);
+      const ref = num(cell.ref) ?? num(vehicleBase);
+      return v === null || ref === null ? null : Number(((v / 100) * ref).toFixed(2));
+    }
+    default:        return null;
+  }
+};
+
+/** What a rider pays (with GST) for a trip of sampleKm(row) in this slab, or null if any cell is unfinished. */
+export const rowRiderTotal = (row, gst = {}, vehicleBase = null) => {
+  const km = sampleKm(row);
+  const [b, d, c] = COMPONENTS.map(k => cellAmount(row.cells[k], km, vehicleBase));
+  if (b === null || d === null || c === null) return null;
+  return { km, total: riderTotal({ rideFare: b + d, conv: c }, gst) };
+};
+
+// ─── Ready-made starting points ─────────────────────────────────────────────
+// A blank table is the hardest screen to start from. These are real sets the
+// founder has already signed off, so "start from an example" is one click.
+
+const sheetRule = (component, min_km, max_km, mode, value, ref_amount = null) => ({
+  component, min_km, max_km, mode, value,
+  ref_kind: ref_amount === null ? 'vehicle_base_fare' : 'amount', ref_amount,
+});
+
+export const TEMPLATES = [
+  {
+    id: 'go_car_offpeak_sheet',
+    label: 'Go Car off-peak sheet (12 Oct)',
+    hint: '₹95 flat up to 3.5 km, then ₹15/km with % of ₹80 base and fee, up to 15 km',
+    build: () => rulesToLadder([
+      sheetRule('base', 0, 3.5, 'fixed', 0),         sheetRule('base', 3.5, 5, 'percent', 40, 80),
+      sheetRule('base', 5, 10, 'percent', 35, 80),   sheetRule('base', 10, 15, 'percent', 30, 80),
+      sheetRule('distance', 0, 3.5, 'fixed', 95),    sheetRule('distance', 3.5, 15, 'per_km', 15),
+      sheetRule('conv', 0, 3.5, 'fixed', 7),         sheetRule('conv', 3.5, 5, 'percent', 22, 80),
+      sheetRule('conv', 5, 10, 'percent', 30, 80),   sheetRule('conv', 10, 15, 'percent', 35, 80),
+    ]),
+  },
+];
+
+// ─── Who wins where ─────────────────────────────────────────────────────────
+
+const targetKey = (t, vehicle, band) => `${t.scope}:${t.scope_id ?? '*'}:${vehicle}:${band}`;
+
+/** Targets (from the editor) that already have a set for this vehicle and band. */
+export const existingTargets = (targets, existingSets, vehicle, band) => {
+  const have = new Map((existingSets || []).map(s => [s.key, s]));
+  return targets
+    .map(t => ({ target: t, set: have.get(targetKey(t, vehicle, band)) }))
+    .filter(x => x.set);
+};
+
+/**
+ * Plain-language notes about how a new set interacts with the others:
+ *   • a city set beats state and all-cities sets
+ *   • a state / all-cities set does not touch a city that has its own set
+ */
+export const precedenceNotes = ({ targets, existingSets, vehicle, band, cities = [] }) => {
+  if (!vehicle || targets.length === 0) return [];
+  const sets = (existingSets || []).filter(s => s.vehicle_type === vehicle && s.band === band);
+  const notes = [];
+  const cityById = new Map(cities.map(c => [c.id, c]));
+
+  const cityTargets = targets.filter(t => t.scope === 'city');
+  if (cityTargets.length) {
+    const global = sets.find(s => s.scope === 'global');
+    const stateSets = sets.filter(s => s.scope === 'state');
+    const overrides = new Set();
+    for (const t of cityTargets) {
+      const st = cityById.get(t.scope_id)?.state_id;
+      if (global) overrides.add('all-cities');
+      if (stateSets.some(s => s.scope_id === st)) overrides.add('state');
+    }
+    if (overrides.size) {
+      notes.push(`${cityTargets.map(t => t.name).join(', ')} will use these slabs instead of the ${[...overrides].join(' / ')} slabs. Other cities are not affected.`);
+    }
+  } else {
+    const own = sets.filter(s => s.scope === 'city'
+      && targets.some(t => t.scope === 'global' || (t.scope === 'state' && cityById.get(s.scope_id)?.state_id === t.scope_id)));
+    if (own.length) {
+      notes.push(`These cities have their own slabs and will keep using them: ${own.map(s => s.scope_name || `City ${s.scope_id}`).join(', ')}.`);
+    }
+  }
+  return notes;
 };
