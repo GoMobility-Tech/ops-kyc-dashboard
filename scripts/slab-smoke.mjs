@@ -85,11 +85,11 @@ const entry = `
       const l = M.rulesToLadder(SHEET);
       eq(l.map(r => [r.from, r.to]), [[0, '3.5'], [3.5, '5'], [5, '10'], [10, '15']], 'boundaries');
       eq(l[0].cells.base.mode, 'none', 'no base fare on the first slab is "None"');
-      eq(l[0].cells.distance, { mode: 'fixed', value: '95', ref: '' }, 'static distance');
-      eq(l[0].cells.conv, { mode: 'fixed', value: '7', ref: '' }, 'static conv');
-      eq(l[1].cells.base, { mode: 'percent', value: '40', ref: '80' }, '40% of 80');
-      eq(l[3].cells.conv, { mode: 'percent', value: '35', ref: '80' }, '35% of 80');
-      eq(l[2].cells.distance, { mode: 'per_km', value: '15', ref: '' }, 'per km');
+      eq(l[0].cells.distance, { mode: 'fixed', value: '95', ref: '', offset: '' }, 'static distance');
+      eq(l[0].cells.conv, { mode: 'fixed', value: '7', ref: '', offset: '' }, 'static conv');
+      eq(l[1].cells.base, { mode: 'percent', value: '40', ref: '80', offset: '' }, '40% of 80');
+      eq(l[3].cells.conv, { mode: 'percent', value: '35', ref: '80', offset: '' }, '35% of 80');
+      eq(l[2].cells.distance, { mode: 'per_km', value: '15', ref: '', offset: '' }, 'per km');
       return 'ok';
     }],
 
@@ -253,6 +253,70 @@ const entry = `
       return 'ok';
     }],
 
+    // ── mig 141: per-km offset + minimum fare (what a converted legacy set uses) ──
+    ['legacy-style set: offset + floor survive rules → ladder → rules unchanged', () => {
+      const r = (component, min, max, mode, value, off = 0) => ({ scope: 'global', scope_id: null, vehicle_type: 'car', band: 'off_peak',
+        component, min_km: String(min), max_km: max === null ? null : String(max), mode, value: String(value),
+        ref_kind: 'vehicle_base_fare', ref_amount: null, offset_amount: String(off), is_active: true });
+      const rules = [
+        r('base', 0, null, 'fixed', 40), r('floor', 0, null, 'fixed', 100),
+        r('distance', 0, 10, 'per_km', 15), r('distance', 10, 20, 'per_km', 16, -10), r('distance', 20, null, 'per_km', 17, -30),
+        r('conv', 0, 2.99, 'fixed', 30), r('conv', 2.99, 8, 'fixed', 40), r('conv', 8, 9.99, 'per_km', 3.75, 10),
+        r('conv', 9.99, 10.13, 'fixed', 48), r('conv', 10.13, null, 'per_km', 3.75, 10),
+      ];
+      const l = M.rulesToLadder(rules);
+      eq(l.map(x => [x.from, x.to]), [[0, '2.99'], [2.99, '8'], [8, '9.99'], [9.99, '10'], [10, '10.13'], [10.13, '20'], [20, '']], 'union of every component boundary');
+      eq(M.validateLadder(l).ok, true, 'valid');
+      eq(l[4].cells.distance, { mode: 'per_km', value: '16', ref: '', offset: '-10' }, 'negative offset kept');
+      eq(l[0].cells.floor, { mode: 'fixed', value: '100', ref: '', offset: '' }, 'floor cell');
+      const back = M.ladderToRules(l);
+      const d = back.filter(x => x.component === 'distance');
+      eq(d.map(x => [x.min_km, x.max_km, x.value, x.offset_amount]), [[0, 10, 15, 0], [10, 20, 16, -10], [20, null, 17, -30]], 'distance rejoined with offsets');
+      eq(back.filter(x => x.component === 'floor').map(x => [x.min_km, x.max_km, x.value]), [[0, null, 100]], 'floor is ONE open row');
+      eq(back.filter(x => x.component === 'conv').map(x => [x.min_km, x.max_km, x.mode, x.value, x.offset_amount]),
+        [[0, 2.99, 'fixed', 30, 0], [2.99, 8, 'fixed', 40, 0], [8, 9.99, 'per_km', 3.75, 10], [9.99, 10.13, 'fixed', 48, 0], [10.13, null, 'per_km', 3.75, 10]], 'conv rows back as they were');
+      eq(M.usesAdvanced(l), true, 'editor opens the advanced columns for this set');
+      return 'ok';
+    }],
+
+    ['a set WITHOUT floor rows round-trips with no floor row (founder-sheet sets must not gain one)', () => {
+      const back = M.ladderToRules(M.rulesToLadder(SHEET));
+      eq(back.filter(x => x.component === 'floor').length, 0, 'no floor rows');
+      eq(M.usesAdvanced(M.rulesToLadder(SHEET)), false, 'simple view');
+      return 'ok';
+    }],
+
+    ['minimum fare: all slabs or none; offset must be a number', () => {
+      const l = M.rulesToLadder(SHEET);
+      eq(M.validateLadder(l).ok, true, 'no floor is fine');
+      let x = M.setCell(l, l[1].id, 'floor', { mode: 'fixed', value: '100' });
+      must(M.validateLadder(x).errors.some(e => /every slab, or choose "No minimum"/.test(e)), 'partial floor not caught');
+      for (const row of l) x = M.setCell(x, row.id, 'floor', { mode: 'fixed', value: '100' });
+      eq(M.validateLadder(x).ok, true, 'floor on every slab is fine');
+      x = M.setCell(x, l[0].id, 'floor', { value: '-5' });
+      must(M.validateLadder(x).errors.some(e => /minimum fare needs an amount/.test(e)), 'negative floor not caught');
+      const o = M.setCell(l, l[2].id, 'distance', { offset: 'abc' });
+      must(M.validateLadder(o).errors.some(e => /must be a number/.test(e)), 'bad offset not caught');
+      return 'ok';
+    }],
+
+    ['cellAmount / rowRiderTotal honour offset and floor', () => {
+      eq(M.cellAmount({ mode: 'per_km', value: '16', offset: '-10' }, 15, 80), 230, '16×15 − 10');
+      eq(M.cellAmount({ mode: 'per_km', value: '16', offset: '-1000' }, 2, 80), 0, 'never below 0');
+      const row = { from: 0, to: '1', cells: { base: { mode: 'fixed', value: '40' }, distance: { mode: 'per_km', value: '15', offset: '' }, conv: { mode: 'fixed', value: '30' }, floor: { mode: 'fixed', value: '100' } } };
+      const t = M.rowRiderTotal(row, { riderRatePct: 5, convFeeGstPct: 18 }, 80);
+      eq(t.total, 140.4, '1 km car off-peak: ride fare lifted to the ₹100 floor → 105 + 35.4 = ₹140.40 (same as the old pricing)');
+      return 'ok';
+    }],
+
+    ['describeCell: offset and floor read in plain words', () => {
+      eq(M.describeCell({ mode: 'per_km', value: '16', offset: '-10' }).main, '₹16 / km − ₹10', 'negative');
+      eq(M.describeCell({ mode: 'per_km', value: '3.75', offset: '10' }).main, '₹3.75 / km + ₹10', 'positive');
+      eq(M.describeCell({ mode: 'fixed', value: '100' }, 'floor'), { main: '₹100', sub: 'minimum, after surge' }, 'floor');
+      eq(M.describeCell({ mode: 'none' }, 'floor'), { main: '—', sub: 'no minimum' }, 'no floor');
+      return 'ok';
+    }],
+
     // ── Renders ────────────────────────────────────────────────────────────
     ['SlabsTab (loading)', () => render(SlabsTab, { onSaved: noop, onError: noop })],
 
@@ -358,6 +422,26 @@ const entry = `
       must(/= ₹75 for a 5 km trip/.test(t), 'per-km result missing');
       must(/₹133\.12/.test(t) && /for a 5 km trip, with GST/.test(t), 'row total missing');
       return 'ok';
+    }],
+
+    ['SlabLadderTable: a set with a minimum fare shows that column; a set without does not', () => {
+      const plainT = visible(render(SlabLadderTable, { ladder: M.rulesToLadder(SHEET) }));
+      must(!/Minimum fare/.test(plainT), 'floor column shown for a set without floor');
+      const withFloor = M.rulesToLadder([...SHEET, { ...SHEET[0], component: 'floor', min_km: '0', max_km: null, mode: 'fixed', value: '100' }]);
+      const t = visible(render(SlabLadderTable, { ladder: withFloor }));
+      must(/Minimum fare/.test(t) && /₹100/.test(t) && /minimum, after surge/.test(t), 'floor column missing: ' + t);
+      return t;
+    }],
+
+    ['SlabEditor: advanced columns open by themselves for a set that uses them, closed otherwise', () => {
+      const withFloor = M.rulesToLadder([...SHEET, { ...SHEET[0], component: 'floor', min_km: '0', max_km: null, mode: 'fixed', value: '100' }]);
+      const mk = (ladder) => ({ mode: 'edit', scope: 'city', scope_id: 108, scopeName: 'Chandigarh', vehicle: 'car', band: 'off_peak', note: '', ladder });
+      const props = { options: OPTIONS, scopes: SCOPES, existingSets: [], gst: {}, onCancel: noop, onChanged: noop, onSaved: noop, onError: noop };
+      const on = visible(render(SlabEditor, { ...props, draft: mk(withFloor) }));
+      must(/Minimum fare \\(optional\\)/.test(on) && /Hide advanced options/.test(on), 'advanced not open: ' + on);
+      const off = visible(render(SlabEditor, { ...props, draft: mk(M.rulesToLadder(SHEET)) }));
+      must(!/Minimum fare \\(optional\\)/.test(off) && /Show advanced options/.test(off), 'advanced open for a plain set');
+      return on;
     }],
 
     ['SlabEditor (create): the three steps, add slab, disabled save', () => {
