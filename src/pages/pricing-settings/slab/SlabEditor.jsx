@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { ArrowLeft, Plus, Trash2, Save, Loader2, Sparkles, Pencil } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Loader2, Sparkles, Pencil, SlidersHorizontal } from 'lucide-react';
 import { Button, Card, CardHeader, Badge, Alert } from '../../../components/ui';
 import Segmented from './Segmented.jsx';
 import ScopePicker from './ScopePicker.jsx';
 import SlabPreviewTable from './SlabPreviewTable.jsx';
 import { previewSlabRules, saveSlabSet } from '../../../api/opsApi.js';
 import {
-  COMPONENTS, COMPONENT_LABEL, BAND_LABEL, BAND_HELP, MODE_OPTIONS, TEMPLATES, kmLabel, num, money,
+  COMPONENTS, COMPONENT_LABEL, FLOOR, FLOOR_OPTIONS, FLOOR_HELP, usesAdvanced,
+  BAND_LABEL, BAND_HELP, MODE_OPTIONS, TEMPLATES, kmLabel, num, money,
   addSlab, removeSlab, setSlabEnd, setCell, validateLadder, ladderToRules,
   rulesToLadder, ladderSignature, previewKms, blankLadder,
   sampleKm, cellAmount, rowRiderTotal, existingTargets, precedenceNotes,
@@ -23,7 +24,7 @@ const errorText = (err) => err.response?.data?.message
 // One cell of the table: HOW this part is charged for this distance range, and
 // — right underneath — what that works out to in rupees, so nobody has to do the
 // sum in their head to know whether they typed the right thing.
-function CellEditor({ cell, km, vehicleBase, onChange, disabled, bad }) {
+function CellEditor({ cell, km, vehicleBase, onChange, disabled, bad, advanced = false }) {
   const ring = bad ? 'border-red-300' : '';
   const amount = cellAmount(cell, km, vehicleBase);
 
@@ -47,6 +48,15 @@ function CellEditor({ cell, km, vehicleBase, onChange, disabled, bad }) {
         </div>
       )}
 
+      {advanced && cell.mode === 'per_km' && (
+        <div className="flex items-center gap-1 text-xs text-ink-muted">
+          then +/− ₹
+          <input type="number" step="0.5" value={cell.offset ?? ''} disabled={disabled} placeholder="0"
+                 title="A fixed ₹ added to (or, if negative, taken off) rate × km. Used when the old pricing charged different rates for the first 10 km, the next 10 km, and so on."
+                 onChange={e => onChange({ offset: e.target.value })} className={`${numField} w-20`} />
+        </div>
+      )}
+
       {cell.mode === 'percent' && (
         <div className="flex items-center gap-1 text-xs text-ink-muted flex-wrap">
           <input type="number" min="0" step="0.5" value={cell.value} disabled={disabled}
@@ -62,6 +72,25 @@ function CellEditor({ cell, km, vehicleBase, onChange, disabled, bad }) {
       {result && <p className="text-[11px] font-semibold text-accent-navy">{result}</p>}
       {cell.mode === 'percent' && cell.ref === '' && vehicleBase && (
         <p className="text-[10px] text-ink-faint leading-snug">of the vehicle&rsquo;s base fare (₹{vehicleBase})</p>
+      )}
+    </div>
+  );
+}
+
+// The optional "minimum fare" part of a slab. "No minimum" is a normal choice.
+function FloorEditor({ cell, onChange, disabled, bad }) {
+  return (
+    <div className="space-y-1 min-w-[150px]">
+      <select value={cell.mode === 'fixed' ? 'fixed' : 'none'} disabled={disabled}
+              onChange={e => onChange({ mode: e.target.value })} className={`${field} w-full`}>
+        {FLOOR_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+      {cell.mode === 'fixed' && (
+        <div className="flex items-center gap-1 text-xs text-ink-muted">
+          ₹
+          <input type="number" min="0" step="0.5" value={cell.value} disabled={disabled}
+                 onChange={e => onChange({ value: e.target.value })} className={`${numField} ${bad ? 'border-red-300' : ''}`} />
+        </div>
       )}
     </div>
   );
@@ -86,6 +115,9 @@ export default function SlabEditor({
   const [note, setNote] = useState(draft.note || '');
   const [ladder, setLadder] = useState(draft.ladder || blankLadder());
   const [replaceOk, setReplaceOk] = useState(false);
+  // Minimum fare and the ₹ added to a per-km rate are rarely needed; they stay out of the way
+  // unless this set already uses them (a set converted from the old pricing does).
+  const [advanced, setAdvanced] = useState(() => usesAdvanced(draft.ladder || blankLadder()));
 
   const initialSig = useRef(ladderSignature(draft.ladder || blankLadder()));
   const initialNote = useRef(draft.note || '');
@@ -309,6 +341,7 @@ export default function SlabEditor({
               <tr>
                 <th className="px-3 py-2.5 text-left font-semibold">Trip distance</th>
                 {COMPONENTS.map(c => <th key={c} className="px-3 py-2.5 text-left font-semibold">{COMPONENT_LABEL[c]}</th>)}
+                {advanced && <th className="px-3 py-2.5 text-left font-semibold" title={FLOOR_HELP}>{COMPONENT_LABEL[FLOOR]} (optional)</th>}
                 <th className="px-3 py-2.5 text-left font-semibold">Rider pays ≈</th>
                 <th className="w-10" />
               </tr>
@@ -341,10 +374,18 @@ export default function SlabEditor({
                       {COMPONENTS.map(c => (
                         <td key={c} className="px-3 py-3 align-top">
                           <CellEditor cell={row.cells[c]} km={km} vehicleBase={vehicleBase} disabled={saving}
+                                      advanced={advanced}
                                       bad={showErr && !row.cells[c].mode}
                                       onChange={(patch) => setLadder(l => setCell(l, row.id, c, patch))} />
                         </td>
                       ))}
+                      {advanced && (
+                        <td className="px-3 py-3 align-top">
+                          <FloorEditor cell={row.cells[FLOOR] || { mode: 'none', value: '' }} disabled={saving}
+                                       bad={showErr && errs.some(e => /inimum fare/.test(e))}
+                                       onChange={(patch) => setLadder(l => setCell(l, row.id, FLOOR, patch))} />
+                        </td>
+                      )}
                       <td className="px-3 py-3 align-top whitespace-nowrap">
                         {total ? (
                           <>
@@ -364,7 +405,7 @@ export default function SlabEditor({
                     </tr>
                     {showErr && (
                       <tr className="bg-red-50/50">
-                        <td colSpan={COMPONENTS.length + 3} className="px-3 pb-2.5 text-[11px] text-red-700">
+                        <td colSpan={COMPONENTS.length + 3 + (advanced ? 1 : 0)} className="px-3 pb-2.5 text-[11px] text-red-700">
                           {errs.join(' ')}
                         </td>
                       </tr>
@@ -376,11 +417,22 @@ export default function SlabEditor({
           </table>
         </div>
 
-        <div>
+        <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" size="sm" icon={Plus} onClick={() => setLadder(l => addSlab(l))} disabled={saving}>
             Add another slab
           </Button>
+          <Button variant="ghost" size="sm" icon={SlidersHorizontal}
+                  onClick={() => setAdvanced(a => !a)} disabled={saving && advanced}
+                  title="Minimum fare, and a fixed ₹ added to a per-km rate">
+            {advanced ? 'Hide' : 'Show'} advanced options
+          </Button>
         </div>
+        {advanced && (
+          <p className="text-[11px] text-ink-faint leading-relaxed">
+            <strong>Minimum fare</strong>: the ride fare never goes below this (applied after surge). <strong>then +/− ₹</strong> on a per-km
+            rate: a fixed amount added to rate × km, e.g. ₹16/km − ₹10 reproduces &ldquo;₹15 for the first 10 km, ₹16 after&rdquo;.
+          </p>
+        )}
 
         <div>
           <label className="block text-[10px] uppercase tracking-wider text-ink-muted font-semibold mb-1">Note (optional)</label>
