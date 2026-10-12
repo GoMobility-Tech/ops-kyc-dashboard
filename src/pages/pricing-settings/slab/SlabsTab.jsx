@@ -25,7 +25,7 @@ const errorText = (err) => err.response?.data?.message || err.message || 'Someth
 // offers is the backend's own model — the vehicle list, the bands and the
 // modes come from the API, and a set is only ever saved whole (the backend
 // validates it and replaces it atomically).
-export default function SlabsTab({ gst, onSaved, onError, onGoSettings }) {
+export default function SlabsTab({ gst, vehicles, onSaved, onError, onGoSettings }) {
   const [state, setState] = useState({ loading: true, failure: '', sets: [], flag: null, options: null, coverage: null, scopes: null, scopesFailure: '' });
   const [view, setView] = useState(null);           // null = list, otherwise an editor draft
   const [filter, setFilter] = useState({ vehicle: '', band: '' });
@@ -51,6 +51,13 @@ export default function SlabsTab({ gst, onSaved, onError, onGoSettings }) {
   useEffect(() => { load(); }, [load]);
 
   const { sets, flag, options, coverage, scopes } = state;
+
+  // vehicle → its base fare, so "40% of the vehicle's base fare" can show a rupee amount
+  const vehicleBaseFares = useMemo(() => Object.fromEntries(
+    (vehicles || []).map(v => [v.vehicle_type, Number(v.base_fare)]).filter(([, b]) => Number.isFinite(b))), [vehicles]);
+
+  // Coming back to the list from a long editor: start at the top, not wherever the editor left the page.
+  useEffect(() => { if (!view) window.scrollTo({ top: 0, behavior: 'auto' }); }, [view]);
 
   const visible = useMemo(() => sets.filter(s =>
     (!filter.vehicle || s.vehicle_type === filter.vehicle) && (!filter.band || s.band === filter.band)),
@@ -115,7 +122,8 @@ export default function SlabsTab({ gst, onSaved, onError, onGoSettings }) {
         {state.scopesFailure && <Alert tone="warning" className="mb-3">Cities could not be loaded ({state.scopesFailure}). You can still pick “All cities”.</Alert>}
         <SlabEditor
           key={view.copyOf || view.scope_id || 'new'}
-          draft={view} options={options} scopes={scopes} existingSets={sets} gst={gst}
+          draft={view} options={options} scopes={scopes} existingSets={sets} gst={gst} vehicleBaseFares={vehicleBaseFares}
+          onEditExisting={openEdit}
           onCancel={() => setView(null)} onChanged={load} onSaved={saved} onError={onError}
         />
       </>
