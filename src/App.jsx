@@ -32,6 +32,7 @@ import LogsPage             from './pages/logs/LogsPage.jsx';
 import ReviewQueuePage      from './pages/review-queue/ReviewQueuePage.jsx';
 import PaymentOrdersPage    from './pages/payment-orders/PaymentOrdersPage.jsx';
 import TransactionsPage     from './pages/transactions/TransactionsPage.jsx';
+import SupportTicketsPage   from './pages/support/SupportTicketsPage.jsx';
 
 function RootRedirect() {
   if (!getToken()) return <Navigate to="/login" replace />;
@@ -116,6 +117,10 @@ export default function App() {
         {/* Review queue — gated by all_drivers since it uses admin endpoints */}
         <Route path="/review-queue"
           element={<RequireAuth moduleKey="all_drivers"><ReviewQueuePage /></RequireAuth>} />
+
+        {/* support_tickets module */}
+        <Route path="/support"
+          element={<RequireAuth moduleKey="support_tickets"><SupportTicketsPage /></RequireAuth>} />
       </Route>
 
       <Route path="/" element={<RootRedirect />} />

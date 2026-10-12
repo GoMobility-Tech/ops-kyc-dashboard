@@ -12,6 +12,7 @@ export const MODULE_ROUTES = {
   dispatch_visibility: '/dispatch',
   pricing_settings: '/pricing-settings',
   data_exports:     '/exports',
+  support_tickets:  '/support',
 };
 
 export const routeFor = (moduleKey) => MODULE_ROUTES[moduleKey];

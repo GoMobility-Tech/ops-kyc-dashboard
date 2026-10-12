@@ -9,15 +9,15 @@ import {
 import { defaultRange, fmtDec, fmtFull, fmtNum, apiError } from '../metricsMeta.js';
 import { pinIcon, GLYPH_START, GLYPH_END } from '../vehicleIcon.js';
 
-const ON_DUTY_COLOUR = '#1e3a8a';
-const IDLE_COLOUR    = '#8a8176';
+const ON_DUTY_COLOUR = '#1d4ed8'; // vivid blue — on a ride
+const IDLE_COLOUR    = '#ea580c'; // vivid orange — idle/roaming (both solid; high-contrast against map tiles)
 
 // Trails are heavy — one day at a time by default, and never more than a week.
 const TRAIL_PRESETS = ROLLING_PRESETS.filter(p => ['today', 'last_7'].includes(p.key));
 
 /**
- * Splits the point stream into runs of the same duty state so the polyline can
- * be solid where the driver was on a ride and dashed where they were idling.
+ * Splits the point stream into runs of the same duty state so the polyline
+ * can switch colour where the driver went on/off duty.
  */
 function toSegments(points) {
   const out = [];
@@ -146,7 +146,7 @@ export default function TrailTab({ driverId }) {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
             <StatTile label="Points" value={fmtNum(data.count ?? points.length)} icon={Navigation} tone="navy" />
             <StatTile label="On ride" value={fmtNum(onDutyCount)} sub="solid blue line" icon={Route} />
-            <StatTile label="Idle" value={fmtNum(points.length - onDutyCount)} sub="dashed grey line" icon={Route} />
+            <StatTile label="Idle" value={fmtNum(points.length - onDutyCount)} sub="solid orange line" icon={Route} />
             <StatTile
               label="Avg speed"
               value={(() => {
@@ -161,10 +161,10 @@ export default function TrailTab({ driverId }) {
 
           <div className="flex flex-wrap items-center gap-4 px-1 text-[10px] text-ink-muted">
             <span className="inline-flex items-center gap-1.5">
-              <span className="w-6 h-0.5 rounded" style={{ background: ON_DUTY_COLOUR }} /> On a ride (on duty)
+              <span className="w-6 h-[3px] rounded" style={{ background: ON_DUTY_COLOUR }} /> On a ride (on duty)
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <span className="w-6 border-t-2 border-dashed" style={{ borderColor: IDLE_COLOUR }} /> Idle / roaming
+              <span className="w-6 h-[3px] rounded" style={{ background: IDLE_COLOUR }} /> Idle / roaming
             </span>
             <span>
               {fmtFull(points[0]?.recordedAt)} → {fmtFull(points[points.length - 1]?.recordedAt)}

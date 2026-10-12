@@ -530,6 +530,12 @@ export const getPricingAudit = ({ scope, target, limit = 100, offset = 0 } = {})
 // that the broadcast could not be confirmed.
 export const reloadPricingCache = () => api.post(`${PRICING}/cache/reload`);
 
+// Rate card preview — the exact card the driver app gets (backend docs/41).
+// Read-only. Params, all optional: vehicleType, zoneId, at (ISO time). With no
+// vehicleType the server picks the first category; `tabs` lists every active one.
+export const getPricingRateCard = (params = {}) =>
+  api.get(`${PRICING}/rate-card`, { params });
+
 // What the answering server currently holds in memory — the fare engine reads
 // exactly this. With several servers behind the load balancer, two calls can
 // land on different ones; `servedBy` says which answered.
@@ -578,3 +584,31 @@ export const getExportJob = (id) => api.get(`${EXPORTS}/${id}`);
 // `url` S3 ka signed link hai (15 min). Har call download_count badhata hai,
 // isliye ise sirf tab call karo jab user ne sach me download press kiya ho.
 export const getExportDownloadUrl = (id) => api.get(`${EXPORTS}/${id}/download`);
+
+// ─── Support Tickets (support_tickets module) ────────────────────────────────
+const SUPPORT = '/admin/support';
+
+export const getSupportStats = () => api.get(`${SUPPORT}/stats`);
+
+export const getSupportTickets = ({
+  status, priority, category, search, page = 1, limit = 20,
+} = {}) =>
+  api.get(SUPPORT, { params: { status, priority, category, search, page, limit } });
+
+export const getSupportTicket = (id) => api.get(`${SUPPORT}/${id}`);
+
+export const updateSupportTicket = (id, patch) => api.patch(`${SUPPORT}/${id}`, patch);
+
+// Multipart upload — shared with the passenger/driver app's own attachment
+// endpoint (any authenticated user, incl. ops/admin, can call it). Returns
+// { attachments: [urls], failed: [names] }.
+export const uploadSupportAttachments = (files) => {
+  const form = new FormData();
+  files.forEach(f => form.append('files', f));
+  return api.post('/support/attachments', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
+export const replySupportTicket = (id, message, attachments = []) =>
+  api.post(`${SUPPORT}/${id}/reply`, { message, attachments });
